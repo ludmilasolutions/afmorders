@@ -2840,7 +2840,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // INICIALIZAR LA APLICACIÓN (llamado desde admin.html)
-// document.addEventListener('DOMContentLoaded', initAdminApp);
+document.addEventListener('DOMContentLoaded', initAdminApp);
 
 // EXPORTAR FUNCIONES GLOBALES
 window.updateOrderStatus = updateOrderStatus;
