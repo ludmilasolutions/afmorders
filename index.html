@@ -3068,7 +3068,8 @@
                 const snapshot = await db.collection('products').get();
                 appState.products = snapshot.docs.map(doc => ({
                     id: doc.id,
-                    ...doc.data()
+                    ...doc.data(),
+                    ventas: 0
                 })).filter(product => product.disponible !== false);
                 
                 // Cargar ventas para productos más vendidos
@@ -3083,23 +3084,29 @@
         // Cargar ventas de productos
         async function loadProductSales() {
             try {
+                // Get all delivered/completed orders
                 const snapshot = await db.collection('orders')
                     .where('estado', '==', 'Entregado')
                     .get();
                 
                 const salesCount = {};
                 
-                snapshot.docs.forEach(doc => {
-                    const order = doc.data();
-                    if (order.items) {
-                        order.items.forEach(item => {
-                            const productId = item.id || item.productId;
-                            if (productId) {
-                                salesCount[productId] = (salesCount[productId] || 0) + (item.cantidad || item.quantity || 1);
-                            }
-                        });
-                    }
-                });
+                if (snapshot.docs && snapshot.docs.length > 0) {
+                    snapshot.docs.forEach(doc => {
+                        const order = doc.data();
+                        if (order.items) {
+                            // Handle both array and object formats
+                            const items = Array.isArray(order.items) ? order.items : Object.values(order.items);
+                            items.forEach(item => {
+                                const productId = item.id || item.productId || item.product_id;
+                                if (productId) {
+                                    const qty = item.cantidad || item.quantity || item.cantidad || 1;
+                                    salesCount[productId] = (salesCount[productId] || 0) + qty;
+                                }
+                            });
+                        }
+                    });
+                }
                 
                 // Agregar ventas a los productos
                 appState.products.forEach(product => {
@@ -3108,6 +3115,8 @@
                 
                 // Ordenar por ventas (más vendidos primero)
                 appState.products.sort((a, b) => b.ventas - a.ventas);
+                
+                console.log('📊 Productos ordenados por ventas:', appState.products.filter(p => p.ventas > 0).length, 'con ventas');
                 
             } catch (error) {
                 console.error('Error cargando ventas:', error);
@@ -3177,8 +3186,14 @@
             // Filtrar productos por categoría
             let filteredProducts = appState.products;
             if (appState.currentCategory === 'mas-vendidos') {
-                // Mostrar más vendidos (los primeros que ya están ordenados)
-                filteredProducts = appState.products.filter(p => p.ventas > 0).slice(0, 20);
+                // Mostrar más vendidos - si no hay ventas, mostrar los primeros 20
+                const productsWithSales = appState.products.filter(p => p.ventas > 0);
+                if (productsWithSales.length > 0) {
+                    filteredProducts = productsWithSales.slice(0, 20);
+                } else {
+                    // Si no hay ventas, mostrar los primeros 20 productos
+                    filteredProducts = appState.products.slice(0, 20);
+                }
             } else if (appState.currentCategory !== 'all') {
                 filteredProducts = appState.products.filter(
                     product => product.categoria === appState.currentCategory
