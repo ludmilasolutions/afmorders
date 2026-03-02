@@ -397,12 +397,7 @@ async function initializeDefaultSettings() {
             tiempo_base_estimado: 30,
             retiro_habilitado: true,
             envio_habilitado: true,
-            colores_marca: {
-                azul: "#1e40af",
-                amarillo: "#f59e0b"
-            },
             telefono_whatsapp: "5491122334455",
-            api_key_gemini: "",
             mantener_historial_dias: 30
         };
         
@@ -2102,11 +2097,9 @@ function updateSettingsForm() {
     
     const storeNameEl = document.getElementById('storeName');
     const whatsappPhoneEl = document.getElementById('whatsappPhone');
-    const geminiApiKeyEl = document.getElementById('geminiApiKey');
     
     if (storeNameEl) storeNameEl.value = settings.nombre_local || '';
     if (whatsappPhoneEl) whatsappPhoneEl.value = settings.telefono_whatsapp || '';
-    if (geminiApiKeyEl) geminiApiKeyEl.value = settings.api_key_gemini || '';
     
     const hoursContainer = document.getElementById('hoursContainer');
     hoursContainer.innerHTML = '';
@@ -2139,29 +2132,22 @@ function updateSettingsForm() {
     var baseTimeEl = document.getElementById('baseDeliveryTime');
     var retiroEnabledEl = document.getElementById('retiroEnabled');
     var envioEnabledEl = document.getElementById('envioEnabled');
-    var colorPrimaryEl = document.getElementById('colorPrimary');
-    var colorSecondaryEl = document.getElementById('colorSecondary');
     
     if (closedMsgEl) closedMsgEl.value = settings.mensaje_cerrado || '';
     if (deliveryPriceEl) deliveryPriceEl.value = settings.precio_envio || 0;
     if (baseTimeEl) baseTimeEl.value = settings.tiempo_base_estimado || 30;
     if (retiroEnabledEl) retiroEnabledEl.checked = settings.retiro_habilitado !== false;
     if (envioEnabledEl) envioEnabledEl.checked = settings.envio_habilitado !== false;
-    if (colorPrimaryEl) colorPrimaryEl.value = settings.colores_marca?.azul || '#1e40af';
-    if (colorSecondaryEl) colorSecondaryEl.value = settings.colores_marca?.amarillo || '#f59e0b';
 }
 
 async function saveSettings() {
     var storeNameEl = document.getElementById('storeName');
     var whatsappPhoneEl = document.getElementById('whatsappPhone');
-    var geminiApiKeyEl = document.getElementById('geminiApiKey');
     var closedMessageEl = document.getElementById('closedMessage');
     var deliveryPriceEl = document.getElementById('deliveryPrice');
     var baseDeliveryTimeEl = document.getElementById('baseDeliveryTime');
     var retiroEnabledEl = document.getElementById('retiroEnabled');
     var envioEnabledEl = document.getElementById('envioEnabled');
-    var colorPrimaryEl = document.getElementById('colorPrimary');
-    var colorSecondaryEl = document.getElementById('colorSecondary');
     
     if (!storeNameEl || !whatsappPhoneEl || !deliveryPriceEl) {
         console.error('Error: Elementos del formulario no encontrados');
@@ -2172,17 +2158,12 @@ async function saveSettings() {
     const settingsData = {
         nombre_local: storeNameEl.value.trim(),
         telefono_whatsapp: whatsappPhoneEl.value.trim(),
-        api_key_gemini: geminiApiKeyEl ? geminiApiKeyEl.value.trim() : '',
         horarios_por_dia: {},
         mensaje_cerrado: closedMessageEl ? closedMessageEl.value.trim() : '',
         precio_envio: parseInt(deliveryPriceEl.value) || 0,
         tiempo_base_estimado: parseInt(baseDeliveryTimeEl.value) || 30,
         retiro_habilitado: retiroEnabledEl ? retiroEnabledEl.checked : true,
         envio_habilitado: envioEnabledEl ? envioEnabledEl.checked : true,
-        colores_marca: {
-            azul: colorPrimaryEl ? colorPrimaryEl.value : '#1e40af',
-            amarillo: colorSecondaryEl ? colorSecondaryEl.value : '#f59e0b'
-        },
         updated_at: new Date().toISOString()
     };
     
