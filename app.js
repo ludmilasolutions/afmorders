@@ -13,14 +13,11 @@ let appState = {
     userOrders: []
 };
 
-// Proveedor de Google
-const googleProvider = new firebase.auth.GoogleAuthProvider();
-
-// Funciones de autenticación
+// Funciones de autenticación con Supabase
 async function loginWithGoogle() {
     try {
         console.log("🔐 Iniciando sesión con Google...");
-        const result = await firebase.auth().signInWithPopup(googleProvider);
+        const result = await auth.signInWithPopup('google');
         const user = result.user;
         
         console.log("✅ Usuario autenticado:", user.email);
@@ -44,7 +41,7 @@ async function loginWithGoogle() {
 
 async function logout() {
     try {
-        await firebase.auth().signOut();
+        await auth.signOut();
         console.log("✅ Sesión cerrada");
         showToast("Sesión cerrada correctamente", 'success');
     } catch (error) {
@@ -68,10 +65,10 @@ function updateUserUI() {
         userInfo.style.display = 'flex';
         
         if (userPhoto) {
-            userPhoto.src = appState.currentUser.photoURL || 'https://via.placeholder.com/32';
+            userPhoto.src = appState.currentUser.avatar_url || appState.currentUser.picture || 'https://via.placeholder.com/32';
         }
         if (userEmail) {
-            userEmail.textContent = appState.currentUser.email || appState.currentUser.displayName;
+            userEmail.textContent = appState.currentUser.email || appState.currentUser.name;
         }
         if (myOrdersBtn) {
             myOrdersBtn.style.display = 'flex';
@@ -1067,17 +1064,17 @@ async function confirmOrderHandler() {
         ).join('\n');
         
         const fullOrderText = `Pedido:\n${orderDetails}\n\nSubtotal: $${subtotal}\n${deliveryTypeValue === 'envío' ? `Envío: $${deliveryCost}\n` : ''}Total: $${total}\n${orderCommentsValue ? `\nComentarios: ${orderCommentsValue}` : ''}`;
-        
+
         // Datos del pedido para Firestore
         const orderData = {
             id_pedido: orderId,
-            fecha: firebase.firestore.FieldValue.serverTimestamp(),
+            fecha: FieldValue.serverTimestamp(),
             nombre_cliente: customerNameValue,
             telefono: customerPhoneValue,
             tipo_pedido: deliveryTypeValue,
             direccion: deliveryTypeValue === 'envío' ? customerAddressValue : '',
             pedido_detallado: fullOrderText,
-            items: appState.cart.map(item => ({
+            items: appState.cart.map(item ={> ({
                 id: item.id,
                 nombre: item.name,
                 precio: item.price,
@@ -1090,7 +1087,7 @@ async function confirmOrderHandler() {
             total: total,
             estado: 'Recibido',
             tiempo_estimado_actual: appState.settings?.tiempo_base_estimado || 30,
-            updated_at: firebase.firestore.FieldValue.serverTimestamp()
+            updated_at: FieldValue.serverTimestamp()
         };
         
         // Agregar datos del usuario si está logueado
@@ -1295,6 +1292,9 @@ async function initApp() {
     console.log('🚀 Inicializando aplicación EL TACHI...');
     
     try {
+        // Inicializar Supabase
+        await initSupabase();
+        
         // Cargar configuración
         await loadSettings();
         
