@@ -1886,11 +1886,301 @@
             }
             
             console.log('✅ Panel Admin cargado');
+            
+            // Código que quedó fuera del script
+            if (orderModal) {
+                orderModal.addEventListener('click', function(e) {
+                    if (e.target === orderModal) {
+                        orderModal.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Cerrar formulario de producto
+            const cancelProductFormButton = document.getElementById('cancelProductFormButton');
+            if (cancelProductFormButton) {
+                cancelProductFormButton.addEventListener('click', function() {
+                    const form = document.getElementById('productForm');
+                    if (form) {
+                        form.classList.add('hidden');
+                    }
+                });
+            }
+            
+            const cancelProductButton = document.getElementById('cancelProductButton');
+            if (cancelProductButton) {
+                cancelProductButton.addEventListener('click', function() {
+                    const form = document.getElementById('productForm');
+                    if (form) {
+                        form.classList.add('hidden');
+                    }
+                });
+            }
+            
+            // Cancelar edición de categoría
+            const cancelEditCategoryButton = document.getElementById('cancelEditCategoryButton');
+            if (cancelEditCategoryButton) {
+                cancelEditCategoryButton.addEventListener('click', function() {
+                    if (window.cancelEditCategory) {
+                        window.cancelEditCategory();
+                    }
+                });
+            }
+            
+            // Mostrar/ocultar fechas personalizadas en reportes
+            const reportPeriod = document.getElementById('reportPeriod');
+            if (reportPeriod) {
+                reportPeriod.addEventListener('change', function() {
+                    const customRange = document.getElementById('customDateRange');
+                    if (this.value === 'custom') {
+                        customRange.classList.remove('hidden');
+                    } else {
+                        customRange.classList.add('hidden');
+                    }
+                });
+            }
+            
+            // Exportar a CSV (placeholder)
+            const exportCSVButton = document.getElementById('exportCSVButton');
+            if (exportCSVButton) {
+                exportCSVButton.addEventListener('click', function() {
+                    alert('Función de exportación a CSV será implementada en la próxima versión.');
+                });
+            }
+            
+            // Botón flotante de actualización
+            const floatingRefresh = document.getElementById('floatingRefresh');
+            if (floatingRefresh) {
+                floatingRefresh.addEventListener('click', function() {
+                    if (window.forceRefreshOrders) {
+                        window.forceRefreshOrders();
+                    }
+                });
+            }
+            
+            // Prevenir envío de formularios por defecto
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                });
+            });
+        }
+        
+        // Crear indicador de estado de tiempo real
+        function createRealtimeIndicator() {
+            const indicator = document.createElement('div');
+            indicator.id = 'realtimeIndicator';
+            indicator.className = 'realtime-indicator';
+            indicator.innerHTML = `
+                <i class="fas fa-circle"></i>
+                <span>Tiempo real activo</span>
+            `;
+            document.body.appendChild(indicator);
+            
+            // Actualizar estado del indicador
+            setInterval(() => {
+                updateRealtimeIndicator();
+            }, 5000);
+        }
+        
+        // Actualizar indicador de tiempo real
+        function updateRealtimeIndicator() {
+            const indicator = document.getElementById('realtimeIndicator');
+            if (!indicator) return;
+            
+            const isOnline = navigator.onLine;
+            indicator.className = 'realtime-indicator ' + (isOnline ? 'online' : 'offline');
+            indicator.querySelector('span').textContent = isOnline ? 'Tiempo real activo' : 'Sin conexión';
+        }
+        
+        // Mostrar fecha y hora actual
+        function updateDateTime() {
+            const now = new Date();
+            const dateTimeStr = now.toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            const dateTimeElement = document.getElementById('currentDateTime');
+            if (dateTimeElement) {
+                dateTimeElement.textContent = dateTimeStr;
+            }
+        }
+        
+        // Mostrar notificación del sistema
+        function showSystemNotification(title, message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `system-notification notification-${type}`;
+            notification.innerHTML = `
+                <div class="notification-icon">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                </div>
+                <div class="notification-content">
+                    <div class="notification-title">${title}</div>
+                    <div class="notification-message">${message}</div>
+                </div>
+                <button class="notification-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto cerrar después de 5 segundos
+            setTimeout(() => {
+                notification.classList.add('notification-closing');
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+        
+        // Función para configurar eventos básicos
+        function setupBasicEventListeners() {
+            // Cerrar modal al hacer clic fuera
+            const orderModal = document.getElementById('orderModal');
+            if (orderModal) {
+                orderModal.addEventListener('click', function(e) {
+                    if (e.target === orderModal) {
+                        orderModal.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Cerrar modal de producto
+            const productModal = document.getElementById('productModal');
+            if (productModal) {
+                productModal.addEventListener('click', function(e) {
+                    if (e.target === productModal) {
+                        productModal.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Cerrar modal de categoría
+            const categoryModal = document.getElementById('categoryModal');
+            if (categoryModal) {
+                categoryModal.addEventListener('click', function(e) {
+                    if (e.target === categoryModal) {
+                        categoryModal.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Prevenir envío de formularios
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                });
+            });
+        }
+        
+        // Configurar Sound
+        const notificationSound = new Audio('notification.mp3');
+        const newOrderSound = new Audio('new-order.mp3');
+        
+        // Solicitar permiso de notificaciones
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        showSystemNotification('Notificaciones activadas', 'Recibirás alertas de nuevos pedidos', 'success');
+                    }
+                });
+            }
+        }
+        
+        // Mostrar actualización de contador
+        window.updateNewOrdersBadge = function(count) {
+            const badge = document.getElementById('newOrdersBadge');
+            if (!badge) return;
+            
+            if (count > 0) {
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.style.display = 'flex';
+                badge.style.animation = 'pulse 1s infinite';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        
+        // Funciones para charts
+        function showChartLoading(chartId) {
+            const canvas = document.getElementById(chartId);
+            if (canvas) {
+                canvas.style.display = 'none';
+            }
+        }
+        
+        function showChartError(chartId, error) {
+            console.error(`Error en chart ${chartId}:`, error);
+        }
+        
+        function showChartNoData(chartId, show = true) {
+            const noDataElement = document.getElementById(`${chartId}NoData`);
+            const canvasElement = document.getElementById(chartId);
+            
+            if (noDataElement) {
+                noDataElement.style.display = show ? 'flex' : 'none';
+            }
+            if (canvasElement) {
+                canvasElement.style.display = show ? 'none' : 'block';
+            }
+        }
+        
+        // Exportar funciones al scope global
+        window.showChartLoading = showChartLoading;
+        window.showChartError = showChartError;
+        window.showChartNoData = showChartNoData;
+        window.updateDateTime = updateDateTime;
+        
+        // Ejecutar funciones de inicialización
+        createRealtimeIndicator();
+        updateDateTime();
+        
+        // Configurar Sound
+        const notificationSound = new Audio('notification.mp3');
+        const newOrderSound = new Audio('new-order.mp3');
+        
+        // Re-producir sonido de notificación
+        function playNotificationSound() {
+            notificationSound.play().catch(e => console.log('Error reproduciendo sonido de notificación:', e));
+        }
+        
+        // Reproducir sonido de nuevo pedido
+        function playNewOrderSound() {
+            newOrderSound.play().catch(e => console.log('Error reproduciendo sonido de nuevo pedido:', e));
+        }
+        
+        // Actualizar badge de nuevos pedidos
+        window.updateNewOrdersBadge = function(count) {
+            const badge = document.getElementById('newOrdersBadge');
+            if (!badge) return;
+            
+            if (count > 0) {
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.style.display = 'flex';
+                badge.style.animation = 'pulse 1s infinite';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
         });
     </script>
-</body>
-</html>
-            if (orderModal) {
+    
+    <!-- Service Worker for PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('Service Worker registrado:', reg.scope))
+                    .catch(err => console.log('Error Service Worker:', err));
+            });
+        }
+    </script>
+
                 orderModal.addEventListener('click', function(e) {
                     if (e.target === orderModal) {
                         orderModal.style.display = 'none';
@@ -2141,6 +2431,17 @@
         updateDateTime();
     </script>
     
+    <!-- Service Worker for PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(reg => console.log('Service Worker registrado:', reg.scope))
+                    .catch(err => console.log('Error Service Worker:', err));
+            });
+        }
+    </script>
+
     <!-- Service Worker for PWA -->
     <script>
         if ('serviceWorker' in navigator) {
