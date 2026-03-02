@@ -20,7 +20,8 @@ const adminState = {
     },
     lastOrderId: null,
     realtimeEnabled: true,
-    productSearchTerm: ''
+    productSearchTerm: '',
+    notifiedOrderIds: new Set() // IDs de pedidos ya notificados con sonido
 };
 
 // FUNCIONES DE UTILIDAD (definidas primero)
@@ -176,29 +177,18 @@ function getFilterName(filter) {
 }
 
 // FUNCIONES DE SONIDO
-function playNotificationSound() {
-    try {
-        const audio = document.getElementById('newOrderSound');
-        if (audio) {
-            audio.currentTime = 0;
-            audio.play().catch(e => console.log('Error reproduciendo sonido:', e));
-        }
-    } catch (error) {
-        console.log('Error con sonido de notificación:', error);
-    }
-}
-
 let notificationAudio = null;
 
 function stopSound() {
     if (notificationAudio) {
         notificationAudio.pause();
         notificationAudio.currentTime = 0;
+        notificationAudio.loop = false;
     }
 }
 
 function playNewOrderSound() {
-    // Notificación del sistema
+    // Notificación del sistema (opcional)
     if (Notification.permission === 'granted') {
         const notification = new Notification('EL TACHI - Nuevo Pedido!', {
             body: 'Tienes un nuevo pedido pendiente',
@@ -213,14 +203,18 @@ function playNewOrderSound() {
         };
     }
     
-    // Reproducir audio
+    // Reproducir audio en bucle
     if (!notificationAudio) {
         notificationAudio = new Audio('SD_ALERT_3.mp3');
         notificationAudio.volume = 0.8;
+        notificationAudio.loop = true; // Reproducir hasta que se detenga
     }
     
-    notificationAudio.currentTime = 0;
-    notificationAudio.play().catch(() => {});
+    // Si ya está sonando, no reiniciar
+    if (notificationAudio.paused) {
+        notificationAudio.currentTime = 0;
+        notificationAudio.play().catch(() => {});
+    }
 }
 
 function requestNotificationPermission() {
@@ -230,13 +224,12 @@ function requestNotificationPermission() {
 }
 
 function showNewOrderAlert(orderId) {
-    // Detener sonido anterior
-    stopSound();
-    
-    // Cerrar alerta anterior si existe
+    // Detener sonido anterior (no se detiene, queremos que siga hasta aceptar)
+    // Verificar si ya hay una alerta activa
     const existingAlert = document.getElementById('newOrderAlert');
     if (existingAlert) {
-        existingAlert.remove();
+        // Ya hay una alerta, no crear otra (el sonido ya está sonando)
+        return;
     }
     
     // Crear alerta visual
@@ -278,11 +271,7 @@ function showNewOrderAlert(orderId) {
         }
     };
     
-    setTimeout(() => {
-        if (alertDiv.parentElement) {
-            alertDiv.remove();
-        }
-    }, 30000);
+    // No timeout, debe quedarse hasta que el usuario acepte
 }
 
 // FUNCIONES DE FIREBASE
@@ -429,13 +418,33 @@ async function loadOrders() {
             ...doc.data()
         }));
         
-        // Actualizar solo si hay cambios
-        if (orders.length !== adminState.orders.length || 
-            orders[0]?.id !== adminState.orders[0]?.id) {
-            adminState.orders = orders;
-            console.log(`📦 ${adminState.orders.length} pedidos cargados (últimas 24hs)`);
+        // Detectar nuevos pedidos (comparar con los anteriores)
+        const previousOrderIds = new Set(adminState.orders.map(o => o.id));
+        const newOrders = orders.filter(o => !previousOrderIds.has(o.id));
+        
+        // Actualizar el estado
+        adminState.orders = orders;
+        
+        // Si hay nuevos pedidos y no han sido notificados previamente
+        if (newOrders.length > 0) {
+            console.log(`🆕 ${newOrders.length} nuevos pedidos detectados`);
+            
+            // Filtrar los que no han sido notificados aún
+            const reallyNew = newOrders.filter(o => !adminState.notifiedOrderIds.has(o.id));
+            
+            if (reallyNew.length > 0) {
+                // Agregar a notificados
+                reallyNew.forEach(o => adminState.notifiedOrderIds.add(o.id));
+                
+                // Mostrar alerta solo para el primer pedido nuevo
+                const firstNew = reallyNew[0];
+                const orderIdDisplay = firstNew.id_pedido || firstNew.id;
+                showNewOrderAlert(orderIdDisplay);
+                playNewOrderSound();
+            }
         }
         
+        console.log(`📦 ${adminState.orders.length} pedidos cargados (últimas 24hs)`);
         return adminState.orders;
         
     } catch (error) {
@@ -448,10 +457,12 @@ async function loadOrders() {
                 .limit(100)
                 .get();
             
-            adminState.orders = snapshot.docs.map(doc => ({
+            const orders = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
+            
+            adminState.orders = orders;
             
             console.log(`📦 ${adminState.orders.length} pedidos cargados (fallback)`);
             return adminState.orders;
@@ -2255,6 +2266,9 @@ async function loadAllData() {
         await loadOrders();
         await loadProducts();
         await loadCategories();
+        
+        // Inicializar el set de pedidos notificados con los existentes
+        adminState.orders.forEach(order => adminState.notifiedOrderIds.add(order.id));
         
         applyOrderFilter('hoy');
         
