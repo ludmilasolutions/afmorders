@@ -279,11 +279,32 @@ class AuthAdapter {
 
     async signInWithPopup(provider) {
         try {
+            console.log("🔄 Iniciando autenticación con Google...");
+            
+            // Limpiar cualquier estado anterior
+            await this.supabase.auth.getSession();
+            
             const { data, error } = await this.supabase.auth.signInWithOAuth({
                 provider: provider,
                 options: {
-                    redirectTo: window.location.origin
+                    redirectTo: window.location.origin,
+                    prompt: 'login'
                 }
+            });
+
+            if (error) {
+                console.error("❌ Error en signInWithPopup:", error);
+                throw error;
+            }
+            
+            return {
+                user: data?.user
+            };
+        } catch (error) {
+            console.error("❌ Error en signInWithPopup:", error);
+            throw error;
+        }
+    }
             });
 
             if (error) throw error;
