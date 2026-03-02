@@ -513,60 +513,37 @@ let productsUnsubscribe = null;
 let categoriesUnsubscribe = null;
 let settingsUnsubscribe = null;
 
+let ordersInterval = null;
+
 function startRealtimeUpdates() {
-    console.log('🎯 Iniciando actualizaciones en tiempo real...');
+    console.log('🎯 Iniciando actualizaciones cada 30 segundos...');
     
     // Detener suscripciones anteriores si existen
     stopRealtimeUpdates();
     
-    // Suscripción a nuevos pedidos (últimas 24 horas)
-    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const oneDayAgoISO = oneDayAgo.toISOString();
+    // Cargar pedidos inmediatamente
+    loadOrders();
     
-    ordersUnsubscribe = db.collection('orders')
-        .where('fecha', '>=', oneDayAgoISO)
-        .orderBy('fecha', 'desc')
-        .onSnapshot((snapshot) => {
-            console.log('📡 Cambios detectados en pedidos');
-            
-            let hasNewOrder = false;
-            let hasStatusChange = false;
-            let changedOrder = null;
-            
-            snapshot.docChanges().forEach((change) => {
-                const orderData = {
-                    id: change.doc.id,
-                    ...change.doc.data()
-                };
-                
-                if (change.type === 'added') {
-                    console.log('➕ Nuevo pedido detectado:', change.doc.id);
-                    
-                    // Verificar si es realmente nuevo (no existe en el estado actual)
-                    const existingIndex = adminState.orders.findIndex(o => o.id === change.doc.id);
-                    if (existingIndex === -1) {
-                        // Insertar al inicio del array
-                        adminState.orders.unshift(orderData);
-                        hasNewOrder = true;
-                        changedOrder = orderData;
-                        
-                        // Verificar si es muy reciente (menos de 2 minutos)
-                        const orderDate = orderData.fecha?.toDate ? orderData.fecha.toDate() : new Date(orderData.fecha);
-                        const now = new Date();
-                        const diffMinutes = (now - orderDate) / (1000 * 60);
-                        
-                        if (diffMinutes < 5) { // Aumentado a 5 minutos para debugging
-                            console.log('🔔 Pedido reciente:', diffMinutes.toFixed(1), 'minutos');
-                            const orderId = orderData.id_pedido || orderData.id.substring(0, 8);
-                            showNotification(`📦 NUEVO PEDIDO #${orderId} por $${orderData.total || 0}`, 'success');
-                            playNewOrderSound();
-                            showNewOrderAlert(orderId);
-                        }
-                    }
-                }
-                
-                if (change.type === 'modified') {
-                    console.log('✏️ Pedido actualizado:', change.doc.id);
+    // Polling cada 30 segundos en lugar de tiempo real
+    ordersInterval = setInterval(function() {
+        console.log('📡 Actualizando pedidos...');
+        loadOrders();
+    }, 30000);
+    
+    // No iniciar otras suscripciones para evitar sobrecarga
+    adminState.realtimeEnabled = true;
+    console.log('✅ Actualizaciones configuradas (polling cada 30s)');
+}
+
+function stopRealtimeUpdates() {
+    if (ordersInterval) {
+        clearInterval(ordersInterval);
+        ordersInterval = null;
+    }
+    
+    adminState.realtimeEnabled = false;
+    console.log('⏹️ Actualizaciones detenidas');
+}
                     
                     const existingIndex = adminState.orders.findIndex(o => o.id === change.doc.id);
                     if (existingIndex !== -1) {
