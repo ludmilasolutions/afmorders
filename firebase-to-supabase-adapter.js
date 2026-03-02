@@ -22,10 +22,41 @@ class FieldValue {
 class FirestoreAdapter {
     constructor(supabaseClient) {
         this.supabase = supabaseClient;
+        this._batchOps = [];
     }
 
     collection(collectionName) {
         return new CollectionReference(this.supabase, collectionName);
+    }
+    
+    batch() {
+        return {
+            _ops: [],
+            set: (docRef, data) => {
+                this._ops.push({ type: 'upsert', docRef, data });
+                return this;
+            },
+            update: (docRef, data) => {
+                this._ops.push({ type: 'update', docRef, data });
+                return this;
+            },
+            delete: (docRef) => {
+                this._ops.push({ type: 'delete', docRef });
+                return this;
+            },
+            commit: async () => {
+                for (const op of this._ops) {
+                    if (op.type === 'upsert') {
+                        await op.docRef.set(op.data);
+                    } else if (op.type === 'update') {
+                        await op.docRef.update(op.data);
+                    } else if (op.type === 'delete') {
+                        await op.docRef.delete();
+                    }
+                }
+                this._ops = [];
+            }
+        };
     }
 }
 
@@ -263,6 +294,16 @@ class AuthAdapter {
     async signOut() {
         const { error } = await this.supabase.auth.signOut();
         if (error) throw error;
+    }
+
+    async signInWithEmailAndPassword(email, password) {
+        const { data, error } = await this.supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+        
+        if (error) throw error;
+        return { user: data.user };
     }
 
     onAuthStateChanged(callback) {

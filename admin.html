@@ -1870,19 +1870,20 @@
     </audio>
 
     <!-- SCRIPTS -->
-    <!-- Inicializar Supabase -->
-    <script>
-        document.addEventListener('DOMContentLoaded', async function() {
-            await initSupabase();
-        });
-    </script>
     <script src="admin-app.js"></script>
     
-    <!-- SCRIPT ADICIONAL PARA FUNCIONALIDADES BÁSICAS Y GRÁFICOS -->
+    <!-- Inicializar Supabase y Admin -->
     <script>
-        // Inicializar cuando el DOM esté listo
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ Panel Admin cargado');
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 Inicializando Panel Admin...');
+            
+            // Inicializar Supabase primero
+            await initSupabase();
+            
+            // Luego inicializar la app del admin
+            if (typeof initAdminApp === 'function') {
+                await initAdminApp();
+            }
             
             // Configurar eventos básicos
             setupBasicEventListeners();
@@ -1892,6 +1893,10 @@
             
             // Inicializar fecha y hora
             updateDateTime();
+            
+            console.log('✅ Panel Admin cargado');
+        });
+    </script>
         });
         
         // Configurar event listeners básicos

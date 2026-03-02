@@ -346,7 +346,7 @@ async function addAdmin(email, nombre) {
             email: adminEmail,
             nombre: nombre || 'Admin',
             isAdmin: true,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            createdAt: new Date().toISOString(),
             createdBy: adminState.currentUser?.email || 'system'
         });
         
@@ -1432,7 +1432,7 @@ async function updateOrderStatus(select) {
     try {
         await db.collection('orders').doc(orderId).update({
             estado: newStatus,
-            fecha_actualizacion: firebase.firestore.FieldValue.serverTimestamp()
+            fecha_actualizacion: new Date().toISOString()
         });
         
         const orderIndex = adminState.orders.findIndex(o => o.id === orderId);
@@ -2007,7 +2007,7 @@ async function saveProduct(productId = null) {
             .split(',')
             .map(a => a.trim())
             .filter(a => a),
-        fecha_actualizacion: firebase.firestore.FieldValue.serverTimestamp()
+        fecha_actualizacion: new Date().toISOString()
     };
     
     if (!productData.nombre) {
@@ -2033,7 +2033,7 @@ async function saveProduct(productId = null) {
                 .replace(/^-|-$/g, '') + '-' + Date.now().toString().slice(-6);
             
             productData.id = newId;
-            productData.fecha_creacion = firebase.firestore.FieldValue.serverTimestamp();
+            productData.fecha_creacion = new Date().toISOString();
             
             await db.collection('products').doc(newId).set(productData);
             
@@ -2178,7 +2178,7 @@ async function addCategory() {
             await db.collection('categories').doc(isEditing).update({
                 nombre: name,
                 orden: order,
-                fecha_actualizacion: firebase.firestore.FieldValue.serverTimestamp()
+                fecha_actualizacion: new Date().toISOString()
             });
             
             cancelEditCategory();
@@ -2195,7 +2195,7 @@ async function addCategory() {
                 id,
                 nombre: name,
                 orden: order,
-                fecha_creacion: firebase.firestore.FieldValue.serverTimestamp()
+                fecha_creacion: new Date().toISOString()
             });
             
             nameInput.value = '';
@@ -2325,7 +2325,7 @@ async function saveSettings() {
             azul: document.getElementById('colorPrimary').value,
             amarillo: document.getElementById('colorSecondary').value
         },
-        fecha_actualizacion: firebase.firestore.FieldValue.serverTimestamp()
+        fecha_actualizacion: new Date().toISOString()
     };
     
     const days = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
@@ -2386,7 +2386,7 @@ async function toggleStoreStatus(checkbox) {
     try {
         await db.collection('settings').doc('config').update({
             abierto: isOpen,
-            fecha_actualizacion: firebase.firestore.FieldValue.serverTimestamp()
+            fecha_actualizacion: new Date().toISOString()
         });
         
         adminState.settings.abierto = isOpen;
@@ -2666,7 +2666,7 @@ function setupAdminEventListeners() {
         logoutButton.addEventListener('click', () => {
             if (confirm('¿Estás seguro de cerrar sesión?')) {
                 stopRealtimeUpdates();
-                auth.signOut();
+                window.auth.signOut();
             }
         });
     }
@@ -2840,7 +2840,7 @@ async function handleLogin() {
     
     try {
         showLoading(true);
-        await auth.signInWithEmailAndPassword(email, password);
+        await window.auth.signInWithEmailAndPassword(email, password);
         hideError(errorElement);
     } catch (error) {
         console.error('Login error:', error);
@@ -2868,13 +2868,14 @@ async function initAdminApp() {
         // Solicitar permiso de notificaciones
         requestNotificationPermission();
         
-        // Verificar conexión a Firebase
-        if (!firebase.apps.length) {
-            showNotification('Error: Firebase no está inicializado', 'error');
+        // Verificar conexión a Supabase
+        if (!window.supabase) {
+            showNotification('Error: Supabase no está inicializado', 'error');
             return;
         }
         
-        auth.onAuthStateChanged(async (user) => {
+        // Configurar auth con Supabase
+        window.auth.onAuthStateChanged(async (user) => {
             if (user) {
                 // Verificar si es admin
                 const isAdmin = await checkAdminStatus(user);
@@ -2882,7 +2883,7 @@ async function initAdminApp() {
                 if (!isAdmin) {
                     // No es admin - cerrar sesión y mostrar error
                     showNotification('🚫 No tienes acceso al panel de administración', 'error');
-                    await auth.signOut();
+                    await window.auth.signOut();
                     showLoginScreen();
                     showError('No tienes permisos de administrador', document.getElementById('loginError'));
                     return;
@@ -2985,8 +2986,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// INICIALIZAR LA APLICACIÓN
-document.addEventListener('DOMContentLoaded', initAdminApp);
+// INICIALIZAR LA APLICACIÓN (llamado desde admin.html)
+// document.addEventListener('DOMContentLoaded', initAdminApp);
 
 // EXPORTAR FUNCIONES GLOBALES
 window.updateOrderStatus = updateOrderStatus;
