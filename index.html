@@ -2674,7 +2674,7 @@
             }
         }
         
-        function setupAuthListeners() {
+        async function setupAuthListeners() {
             console.log("🔐 Configurando listeners de autenticación...");
             
             // Obtener elementos directamente del DOM
@@ -2688,10 +2688,13 @@
                 myOrdersBtn: myOrdersBtnEl
             });
             
-            window.auth.onAuthStateChanged((user) => {
+            window.auth.onAuthStateChanged(async (user) => {
                 appState.currentUser = user;
                 console.log("📱 Estado de auth cambiado:", user ? user.email : "No autenticado");
                 updateUserUI();
+                if (user) {
+                    await loadUserOrders();
+                }
             });
             
             if (loginBtnEl) {
@@ -4018,6 +4021,15 @@
             
             // Inicializar Supabase primero
             await initSupabase();
+            // Configurar listeners de autenticación temprano
+            setupAuthListeners();
+            // Intentar restaurar sesión inicial si existe
+            const { data: { session } } = await window.supabase.auth.getSession();
+            if (session?.user) {
+                appState.currentUser = session.user;
+                updateUserUI();
+                await loadUserOrders();
+            }
             
             // Cargar datos
             await loadSettings();
@@ -4057,6 +4069,14 @@
             
             // Inicializar Supabase primero
             await initSupabase();
+            // Registrar listeners de auth temprano y sincronizar sesión inicial
+            setupAuthListeners();
+            const { data: { session } } = await window.supabase.auth.getSession();
+            if (session?.user) {
+                appState.currentUser = session.user;
+                updateUserUI();
+                await loadUserOrders();
+            }
             
             // Cargar datos
             await loadSettings();
