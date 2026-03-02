@@ -302,19 +302,24 @@ async function checkAdminStatus(user) {
     try {
         if (!user || !user.email) return false;
         
+        // En Supabase el ID del usuario está en user.id
+        const userId = user.id || user.uid;
+        const userEmail = user.email;
+        
         // Verificar en colección "admins" por UID del documento
-        const adminDoc = await db.collection('admins').doc(user.uid).get();
-        if (adminDoc.exists) {
-            const data = adminDoc.data();
-            // Aceptar varios formatos de campo admin
-            if (data.isAdmin === true || data.activo === true || data.rol === 'admin') {
-                return true;
+        if (userId) {
+            const adminDoc = await db.collection('admins').doc(userId).get();
+            if (adminDoc.exists) {
+                const data = adminDoc.data();
+                if (data.isAdmin === true || data.activo === true || data.rol === 'admin') {
+                    return true;
+                }
             }
         }
         
         // También verificar por email
         const adminByEmail = await db.collection('admins')
-            .where('email', '==', user.email)
+            .where('email', '==', userEmail)
             .limit(1)
             .get();
         
@@ -415,8 +420,11 @@ async function loadOrders() {
         const now = new Date();
         const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
         
+        // Convertir a ISO string para Supabase
+        const oneDayAgoISO = oneDayAgo.toISOString();
+        
         const snapshot = await db.collection('orders')
-            .where('fecha', '>=', oneDayAgo)
+            .where('fecha', '>=', oneDayAgoISO)
             .orderBy('fecha', 'desc')
             .get();
         
@@ -513,9 +521,10 @@ function startRealtimeUpdates() {
     
     // Suscripción a nuevos pedidos (últimas 24 horas)
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const oneDayAgoISO = oneDayAgo.toISOString();
     
     ordersUnsubscribe = db.collection('orders')
-        .where('fecha', '>=', oneDayAgo)
+        .where('fecha', '>=', oneDayAgoISO)
         .orderBy('fecha', 'desc')
         .onSnapshot((snapshot) => {
             console.log('📡 Cambios detectados en pedidos');
@@ -2303,27 +2312,64 @@ function updateSettingsForm() {
     document.getElementById('closedMessage').value = settings.mensaje_cerrado || '';
     
     document.getElementById('deliveryPrice').value = settings.precio_envio || 0;
-    document.getElementById('baseDeliveryTime').value = settings.tiempo_base_estimado || 30;
-    document.getElementById('retiroEnabled').checked = settings.retiro_habilitado !== false;
+    var storeNameEl = document.getElementById('storeName');
+    var storeSubtitleEl = document.getElementById('storeSubtitle');
+    var whatsappPhoneEl = document.getElementById('whatsappPhone');
+    var geminiApiKeyEl = document.getElementById('geminiApiKey');
+    var closedMessageEl = document.getElementById('closedMessage');
+    var deliveryPriceEl = document.getElementById('deliveryPrice');
+    var baseDeliveryTimeEl = document.getElementById('baseDeliveryTime');
+    var retiroEnabledEl = document.getElementById('retiroEnabled');
+    var colorPrimaryEl = document.getElementById('colorPrimary');
+    var colorSecondaryEl = document.getElementById('colorSecondary');
     
-    document.getElementById('colorPrimary').value = settings.colores_marca?.azul || '#1e40af';
-    document.getElementById('colorSecondary').value = settings.colores_marca?.amarillo || '#f59e0b';
+    if (!storeNameEl || !storeSubtitleEl || !whatsappPhoneEl || !deliveryPriceEl) {
+        console.error('Error: Algunos elementos del formulario de configuración no existen');
+        return;
+    }
+    
+    if (storeNameEl) document.getElementById('baseDeliveryTime').value = settings.tiempo_base_estimado || 30;
+    if (storeSubtitleEl) document.getElementById('storeSubtitle').value = settings.subtitulo || '';
+    if (whatsappPhoneEl) document.getElementById('whatsappPhone').value = settings.telefono_whatsapp || '';
+    if (deliveryPriceEl) document.getElementById('deliveryPrice').value = settings.precio_envio || 0;
+    if (baseDeliveryTimeEl) document.getElementById('baseDeliveryTime').value = settings.tiempo_base_estimado || 30;
+    if (retiroEnabledEl) document.getElementById('retiroEnabled').checked = settings.retiro_habilitado !== false;
+    
+    if (colorPrimaryEl) document.getElementById('colorPrimary').value = settings.colores_marca?.azul || '#1e40af';
+    if (colorSecondaryEl) document.getElementById('colorSecondary').value = settings.colores_marca?.amarillo || '#f59e0b';
 }
 
 async function saveSettings() {
+    var storeNameEl = document.getElementById('storeName');
+    var storeSubtitleEl = document.getElementById('storeSubtitle');
+    var whatsappPhoneEl = document.getElementById('whatsappPhone');
+    var geminiApiKeyEl = document.getElementById('geminiApiKey');
+    var closedMessageEl = document.getElementById('closedMessage');
+    var deliveryPriceEl = document.getElementById('deliveryPrice');
+    var baseDeliveryTimeEl = document.getElementById('baseDeliveryTime');
+    var retiroEnabledEl = document.getElementById('retiroEnabled');
+    var colorPrimaryEl = document.getElementById('colorPrimary');
+    var colorSecondaryEl = document.getElementById('colorSecondary');
+    
+    if (!storeNameEl || !storeSubtitleEl || !whatsappPhoneEl || !deliveryPriceEl) {
+        console.error('Error: Elementos del formulario no encontrados');
+        showNotification('Error al guardar: formulario no encontrado', 'error');
+        return;
+    }
+    
     const settingsData = {
-            nombre_local: document.getElementById('storeName').value.trim(),
-            subtitulo: document.getElementById('storeSubtitle').value.trim(),
-        telefono_whatsapp: document.getElementById('whatsappPhone').value.trim(),
-        api_key_gemini: document.getElementById('geminiApiKey').value.trim(),
+        nombre_local: storeNameEl.value.trim(),
+        subtitulo: storeSubtitleEl.value.trim(),
+        telefono_whatsapp: whatsappPhoneEl.value.trim(),
+        api_key_gemini: geminiApiKeyEl ? geminiApiKeyEl.value.trim() : '',
         horarios_por_dia: {},
-        mensaje_cerrado: document.getElementById('closedMessage').value.trim(),
-        precio_envio: parseInt(document.getElementById('deliveryPrice').value) || 0,
-        tiempo_base_estimado: parseInt(document.getElementById('baseDeliveryTime').value) || 30,
-        retiro_habilitado: document.getElementById('retiroEnabled').checked,
+        mensaje_cerrado: closedMessageEl ? closedMessageEl.value.trim() : '',
+        precio_envio: parseInt(deliveryPriceEl.value) || 0,
+        tiempo_base_estimado: parseInt(baseDeliveryTimeEl.value) || 30,
+        retiro_habilitado: retiroEnabledEl ? retiroEnabledEl.checked : true,
         colores_marca: {
-            azul: document.getElementById('colorPrimary').value,
-            amarillo: document.getElementById('colorSecondary').value
+            azul: colorPrimaryEl ? colorPrimaryEl.value : '#1e40af',
+            amarillo: colorSecondaryEl ? colorSecondaryEl.value : '#f59e0b'
         },
         fecha_actualizacion: new Date().toISOString()
     };

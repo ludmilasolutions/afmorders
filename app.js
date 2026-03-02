@@ -142,7 +142,7 @@ async function loadUserOrders() {
     
     try {
         const snapshot = await db.collection('orders')
-            .where('user_id', '==', appState.currentUser.uid)
+            .where('user_id', '==', appState.currentUser.id || appState.currentUser.uid)
             .orderBy('fecha', 'desc')
             .get();
         
@@ -1088,11 +1088,11 @@ async function confirmOrderHandler() {
         
         // Agregar datos del usuario si está logueado
         if (appState.currentUser) {
-            orderData.user_id = appState.currentUser.uid;
-            orderData.userEmail = appState.currentUser.email;
-            orderData.userName = appState.currentUser.displayName || customerNameValue;
-            orderData.userPhotoURL = appState.currentUser.photoURL || null;
-            orderData.isRegisteredUser = true;
+            orderData.user_id = appState.currentUser.id || appState.currentUser.uid;
+            orderData.user_email = appState.currentUser.email;
+            orderData.user_name = appState.currentUser.displayName || customerNameValue;
+            orderData.user_photo_url = appState.currentUser.photoURL || null;
+            orderData.is_registered_user = true;
         }
         
         // Guardar en Firestore

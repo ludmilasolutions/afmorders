@@ -2739,13 +2739,18 @@
         
         async function loadUserOrders() {
             if (!appState.currentUser) {
+                appState.currentUser = window.auth._currentUser;
+            }
+            
+            if (!appState.currentUser) {
                 appState.userOrders = [];
                 return;
             }
             
             try {
+                const userId = appState.currentUser.id || appState.currentUser.uid;
                 const snapshot = await db.collection('orders')
-                    .where('user_id', '==', appState.currentUser.uid)
+                    .where('user_id', '==', userId)
                     .orderBy('fecha', 'desc')
                     .get();
                 
@@ -3664,11 +3669,11 @@
                 
                 // Agregar datos del usuario si está logueado
                 if (appState.currentUser) {
-                    orderData.user_id = appState.currentUser.uid;
-                    orderData.userEmail = appState.currentUser.email;
-                    orderData.userName = appState.currentUser.displayName || customerName;
-                    orderData.userPhotoURL = appState.currentUser.photoURL || null;
-                    orderData.isRegisteredUser = true;
+                    orderData.user_id = appState.currentUser.id || appState.currentUser.uid;
+                    orderData.user_email = appState.currentUser.email;
+                    orderData.user_name = appState.currentUser.displayName || customerName;
+                    orderData.user_photo_url = appState.currentUser.photoURL || null;
+                    orderData.is_registered_user = true;
                 }
                 
                 await db.collection('orders').doc(orderId).set(orderData);
