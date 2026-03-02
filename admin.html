@@ -1885,33 +1885,11 @@
                 await initAdminApp();
             }
             
-            // Configurar eventos básicos
-            setupBasicEventListeners();
-            
-            // Crear indicador de tiempo real
-            createRealtimeIndicator();
-            
-            // Inicializar fecha y hora
-            updateDateTime();
-            
             console.log('✅ Panel Admin cargado');
         });
     </script>
-        });
-        
-        // Configurar event listeners básicos
-        function setupBasicEventListeners() {
-            // Manejar el botón de cerrar modal
-            document.getElementById('closeModalButton')?.addEventListener('click', function() {
-                document.getElementById('orderModal').style.display = 'none';
-            });
-            
-            document.getElementById('closeModalBtn')?.addEventListener('click', function() {
-                document.getElementById('orderModal').style.display = 'none';
-            });
-            
-            // Cerrar modal al hacer clic fuera
-            const orderModal = document.getElementById('orderModal');
+</body>
+</html>
             if (orderModal) {
                 orderModal.addEventListener('click', function(e) {
                     if (e.target === orderModal) {
@@ -2157,6 +2135,10 @@
         window.showChartError = showChartError;
         window.showChartNoData = showChartNoData;
         window.updateDateTime = updateDateTime;
+        
+        // Ejecutar funciones de inicialización
+        createRealtimeIndicator();
+        updateDateTime();
     </script>
     
     <!-- Service Worker for PWA -->
