@@ -2570,7 +2570,28 @@
             
             console.log('✅ Aplicación lista para usar');
         });
-    </script>
+        </script>
+        <script>
+        // Global fallback: ensureSessionReady is available for initApp
+        async function ensureSessionReady(timeoutMs = 3500) {
+            const start = Date.now();
+            while (Date.now() - start < timeoutMs) {
+                try {
+                    const { data: { session } } = await window.supabase.auth.getSession();
+                    if (session?.user) {
+                        appState.currentUser = session.user;
+                        updateUserUI();
+                        await loadUserOrders();
+                        return true;
+                    }
+                } catch (e) {
+                    // ignore
+                }
+                await new Promise(r => setTimeout(r, 100));
+            }
+            return false;
+        }
+        </script>
 
     <!-- Supabase SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -4113,7 +4134,38 @@
             // Registrar listeners de auth temprano y sincronizar sesión inicial
             setupAuthListeners();
             // Asegurar que la sesión esté lista antes de cargar datos
-            await ensureSessionReady();
+            // Inline session readiness wait (avoid cross-script dependency at runtime)
+            {
+                let _sessionReady = false;
+                try {
+                    const { data: { session } } = await window.supabase.auth.getSession();
+                    if (session?.user) {
+                        appState.currentUser = session.user;
+                        updateUserUI();
+                        await loadUserOrders();
+                        _sessionReady = true;
+                    }
+                } catch (e) {
+                    // ignore
+                }
+                if (!_sessionReady) {
+                    const t0 = Date.now();
+                    while (Date.now() - t0 < 3500) {
+                        await new Promise(r => setTimeout(r, 100));
+                        try {
+                            const { data: { session: s } } = await window.supabase.auth.getSession();
+                            if (s?.user) {
+                                appState.currentUser = s.user;
+                                updateUserUI();
+                                await loadUserOrders();
+                                break;
+                            }
+                        } catch(e) {
+                            // ignore
+                        }
+                    }
+                }
+            }
             
             // Cargar datos
             await loadSettings();
@@ -4253,23 +4305,4 @@
     </script>
 </body>
 </html>
-        // Helper: wait until session is initialized (or timeout)
-        async function ensureSessionReady(timeoutMs = 3500) {
-            const start = Date.now();
-            while (Date.now() - start < timeoutMs) {
-                try {
-                    // Try to read current session
-                    const { data: { session } } = await window.supabase.auth.getSession();
-                    if (session?.user) {
-                        appState.currentUser = session.user;
-                        updateUserUI();
-                        await loadUserOrders();
-                        return true;
-                    }
-                } catch (e) {
-                    // ignore
-                }
-                await new Promise(r => setTimeout(r, 100));
-            }
-            return false;
-        }
+        
