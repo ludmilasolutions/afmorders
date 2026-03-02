@@ -1441,13 +1441,13 @@ async function updateOrderStatus(select) {
     try {
         await db.collection('orders').doc(orderId).update({
             estado: newStatus,
-            fecha_actualizacion: new Date().toISOString()
+            updated_at: new Date().toISOString()
         });
         
         const orderIndex = adminState.orders.findIndex(o => o.id === orderId);
         if (orderIndex !== -1) {
             adminState.orders[orderIndex].estado = newStatus;
-            adminState.orders[orderIndex].fecha_actualizacion = new Date();
+            adminState.orders[orderIndex].updated_at = new Date();
         }
         
         applyOrderFilter(adminState.currentFilter);
@@ -1646,7 +1646,7 @@ async function showOrderDetails(orderId) {
                     ${order.estado || 'Recibido'}
                 </div>
                 <div style="margin-top: 5px; font-size: 0.9rem; color: #6b7280;">
-                    <i class="fas fa-history"></i> Actualizado: ${order.fecha_actualizacion ? new Date(order.fecha_actualizacion).toLocaleTimeString('es-ES') : '--'}
+                    <i class="fas fa-history"></i> Actualizado: ${order.updated_at ? new Date(order.updated_at).toLocaleTimeString('es-ES') : '--'}
                 </div>
             </div>
         </div>
@@ -2016,7 +2016,7 @@ async function saveProduct(productId = null) {
             .split(',')
             .map(a => a.trim())
             .filter(a => a),
-        fecha_actualizacion: new Date().toISOString()
+        updated_at: new Date().toISOString()
     };
     
     if (!productData.nombre) {
@@ -2187,7 +2187,7 @@ async function addCategory() {
             await db.collection('categories').doc(isEditing).update({
                 nombre: name,
                 orden: order,
-                fecha_actualizacion: new Date().toISOString()
+                updated_at: new Date().toISOString()
             });
             
             cancelEditCategory();
@@ -2349,7 +2349,7 @@ async function saveSettings() {
             azul: colorPrimaryEl ? colorPrimaryEl.value : '#1e40af',
             amarillo: colorSecondaryEl ? colorSecondaryEl.value : '#f59e0b'
         },
-        fecha_actualizacion: new Date().toISOString()
+        updated_at: new Date().toISOString()
     };
     
     const days = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
@@ -2410,7 +2410,7 @@ async function toggleStoreStatus(checkbox) {
     try {
         await db.collection('settings').doc('config').update({
             abierto: isOpen,
-            fecha_actualizacion: new Date().toISOString()
+            updated_at: new Date().toISOString()
         });
         
         adminState.settings.abierto = isOpen;

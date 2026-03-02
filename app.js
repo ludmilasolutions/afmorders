@@ -1083,7 +1083,7 @@ async function confirmOrderHandler() {
             total: total,
             estado: 'Recibido',
             tiempo_estimado_actual: appState.settings?.tiempo_base_estimado || 30,
-            fecha_actualizacion: firebase.firestore.FieldValue.serverTimestamp()
+            updated_at: firebase.firestore.FieldValue.serverTimestamp()
         };
         
         // Agregar datos del usuario si está logueado
