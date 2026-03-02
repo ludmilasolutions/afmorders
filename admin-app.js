@@ -1350,7 +1350,7 @@ function updateOrdersTable() {
         const isPending = order.estado === 'Recibido';
         const isPreparing = order.estado === 'En preparación';
         const isNew = adminState.lastOrderId === order.id;
-        const isRegisteredUser = order.isRegisteredUser || order.userId;
+        const isRegisteredUser = order.is_registered_user || order.user_id;
         
         // Prioridad visual: Pendiente > Preparando > Nuevo
         let highlightStyle = '';
@@ -1565,29 +1565,29 @@ async function showOrderDetails(orderId) {
     }
     
     // Sección de usuario registrado
-    const userInfoHtml = order.isRegisteredUser || order.userId ? `
+    const userInfoHtml = order.is_registered_user || order.user_id ? `
         <div style="background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #3b82f6;">
             <div style="font-weight: 600; color: #1e40af; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
                 <i class="fas fa-user-check" style="color: #3b82f6;"></i> Usuario Registrado
                 <span style="background: #10b981; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem;">CUENTA GOOGLE</span>
             </div>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                ${order.userName ? `
+                ${order.user_name ? `
                     <div>
                         <div style="font-size: 0.8rem; color: #6b7280;">Nombre</div>
-                        <div style="font-weight: 600; color: #1e40af;">${order.userName}</div>
+                        <div style="font-weight: 600; color: #1e40af;">${order.user_name}</div>
                     </div>
                 ` : ''}
-                ${order.userEmail ? `
+                ${order.user_email ? `
                     <div>
                         <div style="font-size: 0.8rem; color: #6b7280;">Email</div>
-                        <div style="font-weight: 600; color: #1e40af;">${order.userEmail}</div>
+                        <div style="font-weight: 600; color: #1e40af;">${order.user_email}</div>
                     </div>
                 ` : ''}
-                ${order.userId ? `
+                ${order.user_id ? `
                     <div>
                         <div style="font-size: 0.8rem; color: #6b7280;">ID de Usuario</div>
-                        <div style="font-weight: 600; color: #6b7280; font-size: 0.8rem;">${order.userId}</div>
+                        <div style="font-weight: 600; color: #6b7280; font-size: 0.8rem;">${order.user_id}</div>
                     </div>
                 ` : ''}
             </div>
