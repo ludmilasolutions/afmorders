@@ -2273,6 +2273,10 @@ function updateSettingsForm() {
     
     const settings = adminState.settings;
     
+    const storeNameEl = document.getElementById('storeName');
+    const whatsappPhoneEl = document.getElementById('whatsappPhone');
+    const geminiApiKeyEl = document.getElementById('geminiApiKey');
+    
     if (storeNameEl) storeNameEl.value = settings.nombre_local || '';
     if (whatsappPhoneEl) whatsappPhoneEl.value = settings.telefono_whatsapp || '';
     if (geminiApiKeyEl) geminiApiKeyEl.value = settings.api_key_gemini || '';
@@ -2303,12 +2307,19 @@ function updateSettingsForm() {
         hoursContainer.appendChild(div);
     });
     
-    document.getElementById('closedMessage').value = settings.mensaje_cerrado || '';
-    document.getElementById('deliveryPrice').value = settings.precio_envio || 0;
-    document.getElementById('baseDeliveryTime').value = settings.tiempo_base_estimado || 30;
-    document.getElementById('retiroEnabled').checked = settings.retiro_habilitado !== false;
-    document.getElementById('colorPrimary').value = settings.colores_marca?.azul || '#1e40af';
-    document.getElementById('colorSecondary').value = settings.colores_marca?.amarillo || '#f59e0b';
+    var closedMsgEl = document.getElementById('closedMessage');
+    var deliveryPriceEl = document.getElementById('deliveryPrice');
+    var baseTimeEl = document.getElementById('baseDeliveryTime');
+    var retiroEnabledEl = document.getElementById('retiroEnabled');
+    var colorPrimaryEl = document.getElementById('colorPrimary');
+    var colorSecondaryEl = document.getElementById('colorSecondary');
+    
+    if (closedMsgEl) closedMsgEl.value = settings.mensaje_cerrado || '';
+    if (deliveryPriceEl) deliveryPriceEl.value = settings.precio_envio || 0;
+    if (baseTimeEl) baseTimeEl.value = settings.tiempo_base_estimado || 30;
+    if (retiroEnabledEl) retiroEnabledEl.checked = settings.retiro_habilitado !== false;
+    if (colorPrimaryEl) colorPrimaryEl.value = settings.colores_marca?.azul || '#1e40af';
+    if (colorSecondaryEl) colorSecondaryEl.value = settings.colores_marca?.amarillo || '#f59e0b';
 }
 
 async function saveSettings() {
