@@ -545,155 +545,6 @@ function stopRealtimeUpdates() {
     adminState.realtimeEnabled = false;
     console.log('⏹️ Actualizaciones detenidas');
 }
-                    
-                    const existingIndex = adminState.orders.findIndex(o => o.id === change.doc.id);
-                    if (existingIndex !== -1) {
-                        const oldStatus = adminState.orders[existingIndex].estado;
-                        adminState.orders[existingIndex] = orderData;
-                        changedOrder = orderData;
-                        
-                        // Notificar cambio de estado
-                        if (orderData.estado !== oldStatus) {
-                            hasStatusChange = true;
-                            
-                            switch(orderData.estado) {
-                                case 'Listo':
-                                    showNotification(`✅ PEDIDO LISTO: #${orderData.id_pedido || orderData.id.substring(0, 8)}`, 'success');
-                                    playNotificationSound();
-                                    break;
-                                case 'En preparación':
-                                    showNotification(`👨‍🍳 EN PREPARACIÓN: #${orderData.id_pedido || orderData.id.substring(0, 8)}`, 'info');
-                                    break;
-                                case 'Entregado':
-                                    showNotification(`📦 ENTREGADO: #${orderData.id_pedido || orderData.id.substring(0, 8)}`, 'info');
-                                    break;
-                                case 'Cancelado':
-                                    showNotification(`❌ CANCELADO: #${orderData.id_pedido || orderData.id.substring(0, 8)}`, 'error');
-                                    break;
-                            }
-                        }
-                    }
-                }
-                
-                if (change.type === 'removed') {
-                    console.log('🗑️ Pedido eliminado:', change.doc.id);
-                    const index = adminState.orders.findIndex(o => o.id === change.doc.id);
-                    if (index !== -1) {
-                        adminState.orders.splice(index, 1);
-                    }
-                }
-            });
-            
-            // Actualizar UI solo si hay cambios
-            if (hasNewOrder || hasStatusChange || snapshot.docChanges().length > 0) {
-                updateDashboard();
-                applyOrderFilter(adminState.currentFilter);
-                
-                // Si estamos en la pestaña de pedidos, actualizar la tabla
-                if (adminState.currentTab === 'orders') {
-                    updateOrdersTable();
-                }
-            }
-            
-            // Actualizar último pedido ID
-            if (changedOrder && hasNewOrder) {
-                adminState.lastOrderId = changedOrder.id;
-            }
-            
-        }, (error) => {
-            console.error('Error en suscripción a pedidos:', error);
-            showNotification('Error en conexión en tiempo real', 'error');
-            
-            // Reintentar después de 5 segundos
-            setTimeout(() => {
-                if (adminState.realtimeEnabled) {
-                    startRealtimeUpdates();
-                }
-            }, 5000);
-        });
-    
-    // Suscripción a productos
-    productsUnsubscribe = db.collection('products').onSnapshot((snapshot) => {
-        console.log('📡 Cambios en productos detectados');
-        loadProducts().then(() => {
-            // Aplicar filtro de búsqueda si existe
-            if (adminState.productSearchTerm) {
-                filterProducts(adminState.productSearchTerm);
-            }
-            
-            if (adminState.currentTab === 'products') {
-                updateProductsGrid();
-            }
-            updateDashboard();
-        });
-    });
-    
-    // Suscripción a categorías
-    categoriesUnsubscribe = db.collection('categories').onSnapshot((snapshot) => {
-        console.log('📡 Cambios en categorías detectados');
-        loadCategories().then(() => {
-            if (adminState.currentTab === 'categories') {
-                updateCategoriesGrid();
-            }
-        });
-    });
-    
-    // Suscripción a configuraciones
-    settingsUnsubscribe = db.collection('settings').doc('config').onSnapshot((doc) => {
-        console.log('📡 Cambios en configuración detectados');
-        if (doc.exists) {
-            adminState.settings = doc.data();
-            updateStoreStatus();
-            if (adminState.currentTab === 'settings') {
-                updateSettingsForm();
-            }
-        }
-    });
-    
-    // Configurar intervalo de actualización periódica
-    const updateInterval = setInterval(() => {
-        if (adminState.currentTab === 'orders' || adminState.currentTab === 'dashboard') {
-            applyOrderFilter(adminState.currentFilter);
-            if (adminState.currentTab === 'dashboard') {
-                updateDashboard();
-            }
-        }
-    }, 15000); // Actualizar cada 15 segundos
-    
-    // Guardar referencia al intervalo
-    adminState.updateInterval = updateInterval;
-    
-    showNotification('✅ Actualizaciones en tiempo real activadas', 'success');
-}
-
-function stopRealtimeUpdates() {
-    console.log('🛑 Deteniendo actualizaciones en tiempo real...');
-    
-    if (ordersUnsubscribe) {
-        ordersUnsubscribe();
-        ordersUnsubscribe = null;
-    }
-    
-    if (productsUnsubscribe) {
-        productsUnsubscribe();
-        productsUnsubscribe = null;
-    }
-    
-    if (categoriesUnsubscribe) {
-        categoriesUnsubscribe();
-        categoriesUnsubscribe = null;
-    }
-    
-    if (settingsUnsubscribe) {
-        settingsUnsubscribe();
-        settingsUnsubscribe = null;
-    }
-    
-    if (adminState.updateInterval) {
-        clearInterval(adminState.updateInterval);
-        adminState.updateInterval = null;
-    }
-}
 
 function toggleRealtimeUpdates() {
     adminState.realtimeEnabled = !adminState.realtimeEnabled;
@@ -706,12 +557,10 @@ function toggleRealtimeUpdates() {
     }
 }
 
-// FILTROS Y ORDENACIÓN
 function applyOrderFilter(filterType) {
     const now = new Date();
     adminState.currentFilter = filterType;
     
-    // Actualizar selector si existe
     const filterSelect = document.getElementById('orderFilter');
     if (filterSelect) {
         filterSelect.value = filterType;
