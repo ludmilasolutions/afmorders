@@ -4018,7 +4018,26 @@
         // INICIALIZAR APP
         async function initApp() {
             console.log('🚀 Inicializando EL TACHI v' + APP_VERSION + '...');
-            
+
+            // Opcional: deshabilitar Service Worker durante desarrollo para evitar cacheo
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                try {
+                    if ('serviceWorker' in navigator) {
+                        const regs = await navigator.serviceWorker.getRegistrations();
+                        for (const r of regs) {
+                            await r.unregister();
+                        }
+                    }
+                } catch (e) {
+                    console.warn('🧪 No fue posible desregistrar SW en dev:', e);
+                }
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                }
+                console.log('🧭 SW desregistrado y caches limpiadas en desarrollo');
+            }
+
             // Inicializar Supabase primero
             await initSupabase();
             // Configurar listeners de autenticación temprano
@@ -4070,6 +4089,24 @@
         // Inicializar cuando el DOM esté listo
         async function initApp() {
             console.log('🚀 Inicializando EL TACHI...');
+            // Desarrollo: deshabilitar Service Worker para evitar caches viejos en recargas rápidas
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                try {
+                    if ('serviceWorker' in navigator) {
+                        const regs = await navigator.serviceWorker.getRegistrations();
+                        for (const r of regs) {
+                            await r.unregister();
+                        }
+                    }
+                } catch (e) {
+                    console.warn('🧪 No fue posible desregistrar SW en dev (2):', e);
+                }
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                }
+                console.log('🧭 SW desregistrado y caches limpiadas en desarrollo (2)');
+            }
             
             // Inicializar Supabase primero
             await initSupabase();

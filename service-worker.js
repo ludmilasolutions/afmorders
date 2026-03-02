@@ -56,8 +56,23 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Estrategia: Cache First, luego Network
+// Estrategia: Cache First, luego Network (con excepción de navegaciones)
 self.addEventListener('fetch', event => {
+  // Si es navegación, intenta red
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then(networkResponse => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
   // No cachear solicitudes a Firebase o APIs externas
   if (event.request.url.includes('firebase') || 
       event.request.url.includes('googleapis') ||
