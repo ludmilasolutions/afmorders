@@ -347,6 +347,7 @@ async function loadSettings() {
                 precio_envio: 300,
                 tiempo_base_estimado: 30,
                 retiro_habilitado: true,
+                envio_habilitado: true,
                 colores_marca: {
                     azul: "#1e40af",
                     amarillo: "#f59e0b"
@@ -1029,6 +1030,12 @@ async function confirmOrderHandler() {
         const deliveryType = document.querySelector('input[name="deliveryType"]:checked');
         const customerAddress = document.getElementById('customerAddress');
         const orderComments = document.getElementById('orderComments');
+        
+        // Validar que envío no esté deshabilitado
+        if (deliveryType && deliveryType.value === 'envío' && appState.settings?.envio_habilitado === false) {
+            alert('El envío a domicilio está deshabilitado en este momento.');
+            return;
+        }
         
         if (!customerName || !customerPhone || !deliveryType) {
             alert('Faltan datos del formulario');

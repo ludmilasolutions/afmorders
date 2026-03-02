@@ -2276,7 +2276,7 @@
                                     <i class="fas fa-store"></i> Retiro en local
                                 </label>
                             </div>
-                            <div class="radio-option">
+                            <div class="radio-option" id="deliveryHomeOption" style="display: none;">
                                 <input type="radio" id="deliveryHome" name="deliveryType" value="envío" class="radio-input">
                                 <label for="deliveryHome" class="radio-label">
                                     <i class="fas fa-motorcycle"></i> Envío a domicilio
@@ -3025,6 +3025,7 @@
                     updateStoreStatus();
                     updateStoreName();
                     updateDeliveryInfo();
+                    updateDeliveryOptions();
                 } else {
                     // Configuración por defecto
                     appState.settings = {
@@ -3639,9 +3640,9 @@
         
         async function confirmOrder() {
             try {
-                // Verificar que el local esté abierto
-                if (!appState.settings?.abierto) {
-                    showToast('El local está cerrado. No se pueden realizar pedidos.', 'error');
+                // Verificar que el local esté abierto según horarios
+                if (!checkStoreIsOpen()) {
+                    showToast(appState.settings?.mensaje_cerrado || 'El local está cerrado. No se pueden realizar pedidos.', 'error');
                     return;
                 }
                 
@@ -3651,6 +3652,12 @@
                 const deliveryType = document.querySelector('input[name="deliveryType"]:checked').value;
                 const customerAddress = document.getElementById('customerAddress').value.trim();
                 const orderComments = document.getElementById('orderComments').value.trim();
+                
+                // Validar que envío no esté deshabilitado
+                if (deliveryType === 'envío' && appState.settings?.envio_habilitado === false) {
+                    showToast('El envío a domicilio está deshabilitado en este momento.', 'error');
+                    return;
+                }
                 
                 // Calcular total
                 let subtotal = getCartTotal();
@@ -3767,10 +3774,43 @@
         }
         
         // UI HELPER FUNCTIONS
+        function checkStoreIsOpen() {
+            const settings = appState.settings;
+            if (!settings || !settings.horarios_por_dia) return false;
+            
+            const now = new Date();
+            const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+            const currentDay = dayNames[now.getDay()];
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+            const currentTime = currentHour * 60 + currentMinute;
+            
+            const schedule = settings.horarios_por_dia[currentDay];
+            if (!schedule || schedule.toLowerCase() === 'cerrado') return false;
+            
+            const match = schedule.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+            if (!match) return false;
+            
+            const startHour = parseInt(match[1]);
+            const startMinute = parseInt(match[2]);
+            const endHour = parseInt(match[3]);
+            const endMinute = parseInt(match[4]);
+            
+            const startTime = startHour * 60 + startMinute;
+            let endTime = endHour * 60 + endMinute;
+            
+            if (endTime === 0) endTime = 24 * 60;
+            
+            return currentTime >= startTime && currentTime < endTime;
+        }
+        
         function updateStoreStatus() {
             if (!appState.settings) return;
             
-            if (appState.settings.abierto) {
+            // Calcular estado basado en horarios
+            const isOpen = checkStoreIsOpen();
+            
+            if (isOpen) {
                 elements.statusText.textContent = 'Abierto ahora';
                 elements.statusDot.style.background = '#10b981';
             } else {
@@ -3804,6 +3844,28 @@
                 <i class="fas fa-clock"></i>
                 <span>${appState.settings.tiempo_base_estimado || 30} min • Envío $${appState.settings.precio_envio || 0}</span>
             `;
+        }
+        
+        function updateDeliveryOptions() {
+            const settings = appState.settings;
+            if (!settings) return;
+            
+            const deliveryHomeOption = document.getElementById('deliveryHomeOption');
+            if (!deliveryHomeOption) return;
+            
+            // Mostrar/ocultar opción de envío a domicilio
+            if (settings.envio_habilitado === false) {
+                deliveryHomeOption.style.display = 'none';
+                // Si está seleccionado envío, cambiar a retiro
+                const deliveryPickup = document.getElementById('deliveryPickup');
+                const deliveryHome = document.getElementById('deliveryHome');
+                if (deliveryHome && deliveryHome.checked && deliveryPickup) {
+                    deliveryPickup.checked = true;
+                    document.getElementById('addressField').style.display = 'none';
+                }
+            } else {
+                deliveryHomeOption.style.display = '';
+            }
         }
         
         // SISTEMA DE INSTALACIÓN PWA MEJORADO
@@ -4009,6 +4071,11 @@
             
             // Configurar autenticación
             setupAuthListeners();
+            
+            // Verificar estado del local cada minuto
+            setInterval(() => {
+                updateStoreStatus();
+            }, 60000);
             
             console.log('✅ App lista para usar');
         }

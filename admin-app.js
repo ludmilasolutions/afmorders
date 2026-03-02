@@ -396,6 +396,7 @@ async function initializeDefaultSettings() {
             precio_envio: 300,
             tiempo_base_estimado: 30,
             retiro_habilitado: true,
+            envio_habilitado: true,
             colores_marca: {
                 azul: "#1e40af",
                 amarillo: "#f59e0b"
@@ -2288,6 +2289,7 @@ function updateSettingsForm() {
     var deliveryPriceEl = document.getElementById('deliveryPrice');
     var baseTimeEl = document.getElementById('baseDeliveryTime');
     var retiroEnabledEl = document.getElementById('retiroEnabled');
+    var envioEnabledEl = document.getElementById('envioEnabled');
     var colorPrimaryEl = document.getElementById('colorPrimary');
     var colorSecondaryEl = document.getElementById('colorSecondary');
     
@@ -2295,6 +2297,7 @@ function updateSettingsForm() {
     if (deliveryPriceEl) deliveryPriceEl.value = settings.precio_envio || 0;
     if (baseTimeEl) baseTimeEl.value = settings.tiempo_base_estimado || 30;
     if (retiroEnabledEl) retiroEnabledEl.checked = settings.retiro_habilitado !== false;
+    if (envioEnabledEl) envioEnabledEl.checked = settings.envio_habilitado !== false;
     if (colorPrimaryEl) colorPrimaryEl.value = settings.colores_marca?.azul || '#1e40af';
     if (colorSecondaryEl) colorSecondaryEl.value = settings.colores_marca?.amarillo || '#f59e0b';
 }
@@ -2307,6 +2310,7 @@ async function saveSettings() {
     var deliveryPriceEl = document.getElementById('deliveryPrice');
     var baseDeliveryTimeEl = document.getElementById('baseDeliveryTime');
     var retiroEnabledEl = document.getElementById('retiroEnabled');
+    var envioEnabledEl = document.getElementById('envioEnabled');
     var colorPrimaryEl = document.getElementById('colorPrimary');
     var colorSecondaryEl = document.getElementById('colorSecondary');
     
@@ -2325,6 +2329,7 @@ async function saveSettings() {
         precio_envio: parseInt(deliveryPriceEl.value) || 0,
         tiempo_base_estimado: parseInt(baseDeliveryTimeEl.value) || 30,
         retiro_habilitado: retiroEnabledEl ? retiroEnabledEl.checked : true,
+        envio_habilitado: envioEnabledEl ? envioEnabledEl.checked : true,
         colores_marca: {
             azul: colorPrimaryEl ? colorPrimaryEl.value : '#1e40af',
             amarillo: colorSecondaryEl ? colorSecondaryEl.value : '#f59e0b'
