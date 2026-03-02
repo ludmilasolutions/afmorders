@@ -6,13 +6,10 @@ console.log("🔄 Inicializando Supabase...");
 const SUPABASE_URL = 'https://uiaxftabxrdfkzvyzpzo.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVpYXhmdGFieHJkZmt6dnl6cHpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDY2NDksImV4cCI6MjA4Nzk4MjY0OX0.Co902fS1LtSXHrXxNWk8PtorrLuRtesh28pBDeBc1b8';
 
-let supabase = null;
-let db = null;
-let auth = null;
-
 async function initSupabase() {
     try {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        // Usar el cliente de Supabase del SDK
+        window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
             auth: {
                 persistSession: true,
                 autoRefreshToken: true,
@@ -22,21 +19,16 @@ async function initSupabase() {
 
         console.log("✅ Cliente Supabase creado");
 
-        const adapter = createFirebaseAdapter(supabase);
+        const adapter = createFirebaseAdapter(window.supabase);
         
-        db = adapter.db;
-        auth = adapter.auth;
-
-        const googleProvider = 'google';
+        window.db = adapter.db;
+        window.auth = adapter.auth;
+        window.googleProvider = 'google';
         
-        window.supabase = supabase;
-        window.db = db;
-        window.auth = auth;
-        window.googleProvider = googleProvider;
-        
+        //模拟 firebase 对象 para compatibilidad
         window.firebase = {
-            auth: () => auth,
-            firestore: () => db,
+            auth: () => window.auth,
+            firestore: () => window.db,
             initializeApp: () => {},
             apps: [],
             FieldValue: FieldValue
@@ -44,7 +36,7 @@ async function initSupabase() {
 
         console.log("✅ Adaptador Firebase→Supabase configurado");
         
-        return { supabase, db, auth };
+        return { supabase: window.supabase, db: window.db, auth: window.auth };
 
     } catch (error) {
         console.error("❌ Error inicializando Supabase:", error);
@@ -54,7 +46,7 @@ async function initSupabase() {
 
 async function testSupabaseConnection() {
     try {
-        const { data, error } = await supabase.from('settings').select('*').limit(1);
+        const { data, error } = await window.supabase.from('settings').select('*').limit(1);
         if (error) throw error;
         console.log('✅ Conexión a Supabase exitosa');
         return true;
@@ -66,7 +58,7 @@ async function testSupabaseConnection() {
 
 async function testSupabaseSave() {
     try {
-        const { error } = await supabase.from('test').insert({
+        const { error } = await window.supabase.from('test').insert({
             message: 'Conexión exitosa',
             timestamp: new Date().toISOString()
         });
