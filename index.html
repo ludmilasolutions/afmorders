@@ -4153,30 +4153,31 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 // Registrar Service Worker con parámetro de versión
-                navigator.serviceWorker.register('/sw.js?v=' + APP_VERSION + '&' + Date.now())
-                    .then(registration => {
-                        console.log('✅ Service Worker registrado:', registration.scope);
-                        
-                        // Escuchar actualizaciones
-                        registration.addEventListener('updatefound', () => {
-                            const newWorker = registration.installing;
-                            newWorker.addEventListener('statechange', () => {
-                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                    console.log('🔄 Nueva versión del Service Worker disponible');
-                                    showToast('Nueva versión disponible. Recargando...', 'success');
-                                    
-                                    // Forzar recarga después de 2 segundos
-                                    setTimeout(() => {
-                                        localStorage.setItem('force_reload', 'true');
-                                        window.location.reload();
-                                    }, 2000);
-                                }
-                            });
-                        });
-                    })
-                    .catch(error => {
-                        console.log('❌ Error al registrar Service Worker:', error);
-                    });
+                console.log('⚠️ Service Worker deshabilitado para testing');
+                // navigator.serviceWorker.register('/sw.js?v=' + APP_VERSION + '&' + Date.now())
+                //     .then(registration => {
+                //         console.log('✅ Service Worker registrado:', registration.scope);
+                //         
+                //         // Escuchar actualizaciones
+                //         registration.addEventListener('updatefound', () => {
+                //             const newWorker = registration.installing;
+                //             newWorker.addEventListener('statechange', () => {
+                //                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                //                     console.log('🔄 Nueva versión del Service Worker disponible');
+                //                     showToast('Nueva versión disponible. Recargando...', 'success');
+                //                     
+                //                     // Forzar recarga después de 2 segundos
+                //                     setTimeout(() => {
+                //                         localStorage.setItem('force_reload', 'true');
+                //                         window.location.reload();
+                //                     }, 2000);
+                //                 }
+                //             });
+                //         });
+                //     })
+                //     .catch(error => {
+                //         console.log('❌ Error al registrar Service Worker:', error);
+                //     });
             });
         }
         
