@@ -4025,6 +4025,10 @@
             setupAuthListeners();
             // Intentar restaurar sesión inicial si existe
             const { data: { session } } = await window.supabase.auth.getSession();
+            // Clean the URL hash after processing the OAuth token to avoid re-processing on reload
+            if (location.hash && location.hash.includes('access_token')) {
+                history.replaceState(null, '', location.pathname + location.search);
+            }
             if (session?.user) {
                 appState.currentUser = session.user;
                 updateUserUI();
@@ -4072,6 +4076,10 @@
             // Registrar listeners de auth temprano y sincronizar sesión inicial
             setupAuthListeners();
             const { data: { session } } = await window.supabase.auth.getSession();
+            // Clean the URL hash after processing the OAuth token to avoid re-processing on reload
+            if (location.hash && location.hash.includes('access_token')) {
+                history.replaceState(null, '', location.pathname + location.search);
+            }
             if (session?.user) {
                 appState.currentUser = session.user;
                 updateUserUI();
