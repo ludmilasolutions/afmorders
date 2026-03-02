@@ -278,17 +278,30 @@ class AuthAdapter {
     }
 
     async signInWithPopup(provider) {
-        const { data, error } = await this.supabase.auth.signInWithOAuth({
-            provider: provider,
-            options: {
-                redirectTo: window.location.origin
-            }
-        });
+        try {
+            const { data, error } = await this.supabase.auth.signInWithOAuth({
+                provider: provider,
+                options: {
+                    redirectTo: window.location.origin
+                }
+            });
 
-        if (error) throw error;
-        return {
-            user: data?.user
-        };
+            if (error) throw error;
+            
+            // Manejar el caso cuando ya estamos en el callback
+            if (window.location.hash.includes('access_token')) {
+                return {
+                    user: data?.user
+                };
+            }
+            
+            return {
+                user: data?.user
+            };
+        } catch (error) {
+            console.error("❌ Error en signInWithPopup:", error);
+            throw error;
+        }
     }
 
     async signOut() {
@@ -325,7 +338,40 @@ function createFirebaseAdapter(supabaseClient) {
     };
 }
 
-window.createFirebaseAdapter = createFirebaseAdapter;
-window.FirestoreAdapter = FirestoreAdapter;
-window.DocumentReference = DocumentReference;
-window.FieldValue = FieldValue;
+// Función para manejar el callback de OAuth
+function handleOAuthCallback() {
+    if (window.location.hash.includes('access_token')) {
+        console.log("Ⱥ Manejando callback de OAuth...");
+        
+        // Extraer el access token del hash
+        const hashParams = new URLSearchParams(window.location.hash.slice(1));
+        const accessToken = hashParams.get('access_token');
+        const expiresAt = hashParams.get('expires_at');
+        const providerToken = hashParams.get('provider_token');
+        const sb = hashParams.get('sb');
+        const refreshToken = hashParams.get('refresh_token');
+        
+        if (accessToken) {
+            console.log("✅ Callback de OAuth detectado");
+            
+            // Limpiar el hash de la URL
+            window.location.hash = '';
+            
+            // Intentar obtener la sesión actual
+            return window.supabase.auth.getSession().then(({ data: { session } }) => ({
+                user: session?.user,
+                session: session
+            }));
+        }
+    }
+    
+    return Promise.resolve(null);
+}
+
+// Exportar la función para que esté disponible globalmente
+window.handleOAuthCallback = handleOAuthCallback;
+
+// Intentar manejar el callback cuando se carga la página
+window.addEventListener('load', () => {
+    handleOAuthCallback();
+});
