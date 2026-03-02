@@ -2765,8 +2765,11 @@ async function initAdminApp() {
                     startRealtimeUpdates();
                 }, 1000);
                 
-                // Mostrar notificación de conexión
-                showNotification('✅ Panel admin conectado - Actualizaciones en tiempo real activadas', 'success');
+                // Mostrar notificación de conexión (solo una vez por sesión)
+                if (!sessionStorage.getItem('admin_notified')) {
+                    showNotification('✅ Panel admin conectado - Actualizaciones en tiempo real activadas', 'success');
+                    sessionStorage.setItem('admin_notified', '1');
+                }
                 
             } else {
                 showLoginScreen();
