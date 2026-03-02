@@ -2273,13 +2273,7 @@ function updateSettingsForm() {
     
     const settings = adminState.settings;
     
-    const storeNameEl = document.getElementById('storeName');
-    const storeSubtitleEl = document.getElementById('storeSubtitle');
-    const whatsappPhoneEl = document.getElementById('whatsappPhone');
-    const geminiApiKeyEl = document.getElementById('geminiApiKey');
-    
     if (storeNameEl) storeNameEl.value = settings.nombre_local || '';
-    if (storeSubtitleEl) storeSubtitleEl.value = settings.subtitulo || '';
     if (whatsappPhoneEl) whatsappPhoneEl.value = settings.telefono_whatsapp || '';
     if (geminiApiKeyEl) geminiApiKeyEl.value = settings.api_key_gemini || '';
     
@@ -2319,7 +2313,6 @@ function updateSettingsForm() {
 
 async function saveSettings() {
     var storeNameEl = document.getElementById('storeName');
-    var storeSubtitleEl = document.getElementById('storeSubtitle');
     var whatsappPhoneEl = document.getElementById('whatsappPhone');
     var geminiApiKeyEl = document.getElementById('geminiApiKey');
     var closedMessageEl = document.getElementById('closedMessage');
@@ -2329,7 +2322,7 @@ async function saveSettings() {
     var colorPrimaryEl = document.getElementById('colorPrimary');
     var colorSecondaryEl = document.getElementById('colorSecondary');
     
-    if (!storeNameEl || !storeSubtitleEl || !whatsappPhoneEl || !deliveryPriceEl) {
+    if (!storeNameEl || !whatsappPhoneEl || !deliveryPriceEl) {
         console.error('Error: Elementos del formulario no encontrados');
         showNotification('Error al guardar: formulario no encontrado', 'error');
         return;
@@ -2337,7 +2330,6 @@ async function saveSettings() {
     
     const settingsData = {
         nombre_local: storeNameEl.value.trim(),
-        subtitulo: storeSubtitleEl.value.trim(),
         telefono_whatsapp: whatsappPhoneEl.value.trim(),
         api_key_gemini: geminiApiKeyEl ? geminiApiKeyEl.value.trim() : '',
         horarios_por_dia: {},
