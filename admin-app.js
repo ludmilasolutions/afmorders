@@ -291,36 +291,39 @@ async function getSettings() {
 // Verificar si el usuario es admin
 async function checkAdminStatus(user) {
     try {
-        if (!user || !user.email) return false;
-        
-        // En Supabase el ID del usuario está en user.id
-        const userId = user.id || user.uid;
+        if (!user) return false;
         const userEmail = user.email;
-        
-        // Verificar en colección "admins" por UID del documento
+        const userId = user.id || user.uid;
+
+        // Verificar por UID si está disponible
         if (userId) {
-            const adminDoc = await db.collection('admins').doc(userId).get();
-            if (adminDoc.exists) {
-                const data = adminDoc.data();
-                if (data.isAdmin === true || data.activo === true || data.rol === 'admin') {
-                    return true;
+            try {
+                const adminDoc = await db.collection('admins').doc(userId).get();
+                if (adminDoc && adminDoc.exists) {
+                    const data = adminDoc.data();
+                    if (data.isAdmin === true || data.activo === true || data.rol === 'admin') {
+                        return true;
+                    }
                 }
+            } catch (e) {
+                // Fall back gracefully si el UID no existe en admins
+                console.warn('checkAdminStatus: fallo al consultar por id', e);
             }
         }
-        
-        // También verificar por email
-        const adminByEmail = await db.collection('admins')
-            .where('email', '==', userEmail)
-            .limit(1)
-            .get();
-        
-        if (!adminByEmail.empty) {
-            const data = adminByEmail.docs[0].data();
-            if (data.isAdmin === true || data.activo === true || data.rol === 'admin') {
+
+        // Verificar por correo electrónico como respaldo
+        if (userEmail) {
+            const adminByEmail = await db.collection('admins')
+                .where('email', '==', userEmail)
+                .limit(1)
+                .get();
+            const docs = adminByEmail?.docs || (adminByEmail?.length ? adminByEmail : []);
+            const first = Array.isArray(docs) ? docs[0] : null;
+            const data = first?.data ? first.data() : null;
+            if (data && (data.isAdmin === true || data.activo === true || data.rol === 'admin')) {
                 return true;
             }
         }
-        
         return false;
     } catch (error) {
         console.error("Error verificando admin:", error);
@@ -406,69 +409,51 @@ async function loadOrders() {
     try {
         const now = new Date();
         const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        
-        // Convertir a ISO string para Supabase
-        const oneDayAgoISO = oneDayAgo.toISOString();
-        
+        let oneDayAgoISO = oneDayAgo.toISOString();
+        if (!oneDayAgoISO || isNaN(new Date(oneDayAgoISO).getTime())) {
+            oneDayAgoISO = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+        }
         const snapshot = await db.collection('orders')
             .where('fecha', '>=', oneDayAgoISO)
             .orderBy('fecha', 'desc')
             .get();
-        
-        const orders = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-        
-        // Detectar nuevos pedidos (comparar con los anteriores)
+        let orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (!orders || orders.length === 0) {
+            const fallbackSnapshot = await db.collection('orders')
+                .orderBy('fecha', 'desc')
+                .limit(200)
+                .get();
+            orders = fallbackSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+
         const previousOrderIds = new Set(adminState.orders.map(o => o.id));
         const newOrders = orders.filter(o => !previousOrderIds.has(o.id));
-        
-        // Actualizar el estado
         adminState.orders = orders;
-        
-        // Si hay nuevos pedidos y no han sido notificados previamente
+
         if (newOrders.length > 0) {
             console.log(`🆕 ${newOrders.length} nuevos pedidos detectados`);
-            
-            // Filtrar los que no han sido notificados aún
             const reallyNew = newOrders.filter(o => !adminState.notifiedOrderIds.has(o.id));
-            
             if (reallyNew.length > 0) {
-                // Agregar a notificados
                 reallyNew.forEach(o => adminState.notifiedOrderIds.add(o.id));
-                
-                // Mostrar alerta solo para el primer pedido nuevo
                 const firstNew = reallyNew[0];
                 const orderIdDisplay = firstNew.id_pedido || firstNew.id;
                 showNewOrderAlert(orderIdDisplay);
                 playNewOrderSound();
             }
         }
-        
         console.log(`📦 ${adminState.orders.length} pedidos cargados (últimas 24hs)`);
         return adminState.orders;
-        
     } catch (error) {
         console.error('Error cargando pedidos:', error);
-        
-        // Fallback: cargar últimos 100 pedidos
         try {
             const snapshot = await db.collection('orders')
                 .orderBy('fecha', 'desc')
                 .limit(100)
                 .get();
-            
-            const orders = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            
+            const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             adminState.orders = orders;
-            
             console.log(`📦 ${adminState.orders.length} pedidos cargados (fallback)`);
             return adminState.orders;
-            
         } catch (fallbackError) {
             console.error('Error en fallback de carga:', fallbackError);
             return [];
@@ -2734,8 +2719,14 @@ async function initAdminApp() {
             return;
         }
         
-        // Configurar auth con Supabase
-        window.auth.onAuthStateChanged(async (user) => {
+        // Configurar auth con Supabase (o fallback si Firebase no está)
+        if (!(window.auth && typeof window.auth.onAuthStateChanged === 'function')) {
+            console.warn('Firebase Auth no disponible; omitiendo onAuthStateChanged.');
+            showLoginScreen();
+            stopRealtimeUpdates();
+        } else {
+            // Configurar auth con Supabase
+            window.auth.onAuthStateChanged(async (user) => {
             if (user) {
                 // Verificar si es admin
                 const isAdmin = await checkAdminStatus(user);
@@ -2784,6 +2775,8 @@ async function initAdminApp() {
             }
         });
         
+        });
+        }
         setupLoginEvents();
         
         console.log('✅ Panel Admin inicializado');
@@ -2831,9 +2824,10 @@ document.addEventListener('DOMContentLoaded', function() {
         notificationSound.id = 'notificationSound';
         notificationSound.preload = 'auto';
         notificationSound.style.display = 'none';
-        notificationSound.innerHTML = `
-            <source src="https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3" type="audio/mpeg">
-        `;
+        notificationSound.src = '/assets/mixkit-correct-answer-tone-2870.mp3';
+        notificationSound.onerror = () => {
+            notificationSound.src = 'https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3';
+        };
         document.body.appendChild(notificationSound);
     }
     
@@ -2842,9 +2836,10 @@ document.addEventListener('DOMContentLoaded', function() {
         newOrderSound.id = 'newOrderSound';
         newOrderSound.preload = 'auto';
         newOrderSound.style.display = 'none';
-        newOrderSound.innerHTML = `
-            <source src="https://assets.mixkit.co/sfx/preview/mixkit-alert-quick-chime-766.mp3" type="audio/mpeg">
-        `;
+        newOrderSound.src = '/assets/mixkit-alert-quick-chime-766.mp3';
+        newOrderSound.onerror = () => {
+            newOrderSound.src = 'https://assets.mixkit.co/sfx/preview/mixkit-alert-quick-chime-766.mp3';
+        };
         document.body.appendChild(newOrderSound);
     }
 });
