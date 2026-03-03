@@ -329,7 +329,7 @@ async function loadSettings() {
             
             // Crear configuración por defecto
             const defaultSettings = {
-                nombre_local: "EL TACHI Rotisería",
+                nombre_local: "Mi Local",
                 horarios_por_dia: {
                     lunes: "11:00 - 23:00",
                     martes: "11:00 - 23:00",
@@ -1156,8 +1156,11 @@ async function generateOrderId() {
             
             // Obtener prefijo del nombre del local (primeras letras, sin espacios)
             let prefix = 'PED';
-            if (appState.settings && appState.settings.nombre_local) {
-                prefix = appState.settings.nombre_local
+            const nombreLocal = appState.settings?.nombre_local;
+            console.log('🏷️ Nombre del local para ID:', nombreLocal);
+            
+            if (nombreLocal) {
+                prefix = nombreLocal
                     .toUpperCase()
                     .replace(/[^A-Z0-9]/g, '')
                     .substring(0, 4)
@@ -1172,8 +1175,9 @@ async function generateOrderId() {
         const timestamp = Date.now().toString().slice(-6);
         
         let prefix = 'PED';
-        if (appState.settings && appState.settings.nombre_local) {
-            prefix = appState.settings.nombre_local
+        const nombreLocal = appState.settings?.nombre_local;
+        if (nombreLocal) {
+            prefix = nombreLocal
                 .toUpperCase()
                 .replace(/[^A-Z0-9]/g, '')
                 .substring(0, 4)

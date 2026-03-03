@@ -2178,9 +2178,12 @@ async function saveSettings() {
     });
     
     try {
-        await db.collection('settings').doc('config').update(settingsData);
+        // Usar set con merge para asegurar que se guarden todos los campos
+        await db.collection('settings').doc('config').set(settingsData, { merge: true });
         
         adminState.settings = { ...adminState.settings, ...settingsData };
+        
+        console.log('✅ Configuración guardada:', settingsData.nombre_local);
         
         updateStoreStatus();
         
