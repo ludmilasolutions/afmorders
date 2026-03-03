@@ -320,7 +320,8 @@ async function loadSettings() {
         
         if (doc.exists) {
             appState.settings = doc.data();
-            console.log("✅ Configuración cargada:", appState.settings.nombre_local);
+            console.log("✅ Configuración cargada:", appState.settings);
+            console.log("🏪 Nombre del local:", appState.settings.nombre_local);
             updateStoreStatus();
             updateDeliveryInfo();
             return appState.settings;
@@ -1138,6 +1139,22 @@ async function confirmOrderHandler() {
 
 async function generateOrderId() {
     try {
+        // Cargar settings directamente de Supabase para asegurar tener el nombre actual
+        console.log('🔍 Cargando settings para generar ID...');
+        const settingsRef = db.collection('settings').doc('config');
+        const settingsDoc = await settingsRef.get();
+        
+        let nombreLocal = 'Mi Local';
+        if (settingsDoc.exists) {
+            const settingsData = settingsDoc.data();
+            nombreLocal = settingsData?.nombre_local || 'Mi Local';
+            console.log('🏪 Nombre del local desde Supabase:', nombreLocal);
+            // Actualizar appState con los settings más recientes
+            appState.settings = { ...appState.settings, ...settingsData };
+        } else {
+            console.log('⚠️ No se encontró configuración en Supabase');
+        }
+        
         const counterRef = db.collection('counters').doc('orders');
         
         return await db.runTransaction(async (transaction) => {
@@ -1154,19 +1171,14 @@ async function generateOrderId() {
             
             const paddedNumber = newNumber.toString().padStart(6, '0');
             
-            // Obtener prefijo del nombre del local (primeras letras, sin espacios)
-            let prefix = 'PED';
-            const nombreLocal = appState.settings?.nombre_local;
-            console.log('🏷️ Nombre del local para ID:', nombreLocal);
+            // Generar prefijo del nombre del local
+            let prefix = nombreLocal
+                .toUpperCase()
+                .replace(/[^A-Z0-9]/g, '')
+                .substring(0, 4)
+                .padEnd(4, 'X');
             
-            if (nombreLocal) {
-                prefix = nombreLocal
-                    .toUpperCase()
-                    .replace(/[^A-Z0-9]/g, '')
-                    .substring(0, 4)
-                    .padEnd(4, 'X');
-            }
-            
+            console.log('🎫 ID de pedido generado:', `${prefix}-${paddedNumber}`);
             return `${prefix}-${paddedNumber}`;
         });
         
@@ -1175,7 +1187,7 @@ async function generateOrderId() {
         const timestamp = Date.now().toString().slice(-6);
         
         let prefix = 'PED';
-        const nombreLocal = appState.settings?.nombre_local;
+        const nombreLocal = appState.settings?.nombre_local || 'Mi Local';
         if (nombreLocal) {
             prefix = nombreLocal
                 .toUpperCase()
