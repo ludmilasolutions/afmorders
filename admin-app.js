@@ -2719,68 +2719,88 @@ async function initAdminApp() {
             return;
         }
         
-        // Configurar auth con Supabase (o fallback si Firebase no está)
+        // Configurar auth con Supabase (fallback si Firebase no está)
         if (!(window.auth && typeof window.auth.onAuthStateChanged === 'function')) {
-            console.warn('Firebase Auth no disponible; omitiendo onAuthStateChanged.');
-            showLoginScreen();
-            stopRealtimeUpdates();
-        } else {
-            // Configurar auth con Supabase
-            window.auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                // Verificar si es admin
-                const isAdmin = await checkAdminStatus(user);
-                
-                if (!isAdmin) {
-                    // No es admin - cerrar sesión y mostrar error
-                    showNotification('🚫 No tienes acceso al panel de administración', 'error');
-                    await window.auth.signOut();
+            console.warn('Firebase Auth no disponible; usando Supabase si existe.');
+            (async () => {
+                try {
+                    let user = null;
+                    if (window.supabase && window.supabase.auth && typeof window.supabase.auth.getSession === 'function') {
+                        const { data } = await window.supabase.auth.getSession();
+                        const sess = data?.session;
+                        if (sess?.user) user = { id: sess.user.id, email: sess.user.email };
+                    }
+                    if (user) {
+                        const isAdmin = await checkAdminStatus(user);
+                        if (!isAdmin) {
+                            showNotification('🚫 No tienes acceso al panel de administración', 'error');
+                            await (window.supabase?.auth?.signOut?.())?.();
+                            showLoginScreen();
+                            showError('No tienes permisos de administrador', document.getElementById('loginError'));
+                            return;
+                        }
+                        adminState.currentUser = user;
+                        adminState.isAdmin = true;
+                        showAdminPanel();
+                        const userAvatar = document.getElementById('userAvatar');
+                        if (userAvatar) {
+                            const initials = user.email ? user.email.substring(0, 2).toUpperCase() : 'AD';
+                            userAvatar.innerHTML = initials;
+                            userAvatar.style.background = 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)';
+                        }
+                        await loadAllData();
+                        setupAdminEventListeners();
+                        setTimeout(() => startRealtimeUpdates(), 1000);
+                        if (!sessionStorage.getItem('admin_notified')) {
+                            showNotification('✅ Panel admin conectado - Actualizaciones en tiempo real activadas', 'success');
+                            sessionStorage.setItem('admin_notified', '1');
+                        }
+                    } else {
+                        showLoginScreen();
+                        stopRealtimeUpdates();
+                    }
+                } catch (fallbackError) {
+                    console.error('Fallback auth error:', fallbackError);
                     showLoginScreen();
-                    showError('No tienes permisos de administrador', document.getElementById('loginError'));
-                    return;
+                    stopRealtimeUpdates();
                 }
-                
-                adminState.currentUser = user;
-                adminState.isAdmin = true;
-                showAdminPanel();
-                
-                // Actualizar avatar de usuario
-                const userAvatar = document.getElementById('userAvatar');
-                if (userAvatar) {
-                    const initials = user.email ? user.email.substring(0, 2).toUpperCase() : 'AD';
-                    userAvatar.innerHTML = initials;
-                    userAvatar.style.background = 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)';
+            })();
+        } else {
+            // Firebase está disponible: ruta original
+            window.auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    const isAdmin = await checkAdminStatus(user);
+                    if (!isAdmin) {
+                        showNotification('🚫 No tienes acceso al panel de administración', 'error');
+                        await window.auth.signOut();
+                        showLoginScreen();
+                        showError('No tienes permisos de administrador', document.getElementById('loginError'));
+                        return;
+                    }
+                    adminState.currentUser = user;
+                    adminState.isAdmin = true;
+                    showAdminPanel();
+                    const userAvatar = document.getElementById('userAvatar');
+                    if (userAvatar) {
+                        const initials = user.email ? user.email.substring(0, 2).toUpperCase() : 'AD';
+                        userAvatar.innerHTML = initials;
+                        userAvatar.style.background = 'linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)';
+                    }
+                    await loadAllData();
+                    setupAdminEventListeners();
+                    setTimeout(() => startRealtimeUpdates(), 1000);
+                    if (!sessionStorage.getItem('admin_notified')) {
+                        showNotification('✅ Panel admin conectado - Actualizaciones en tiempo real activadas', 'success');
+                        sessionStorage.setItem('admin_notified', '1');
+                    }
+                } else {
+                    showLoginScreen();
+                    stopRealtimeUpdates();
                 }
-                
-                // Cargar datos iniciales
-                await loadAllData();
-                
-                // Configurar eventos
-                setupAdminEventListeners();
-                
-                // Iniciar actualizaciones en tiempo real
-                setTimeout(() => {
-                    startRealtimeUpdates();
-                }, 1000);
-                
-                // Mostrar notificación de conexión (solo una vez por sesión)
-                if (!sessionStorage.getItem('admin_notified')) {
-                    showNotification('✅ Panel admin conectado - Actualizaciones en tiempo real activadas', 'success');
-                    sessionStorage.setItem('admin_notified', '1');
-                }
-                
-            } else {
-                showLoginScreen();
-                stopRealtimeUpdates();
-            }
-        });
-    } else {
-        // Firebase no disponible; fallback simple: mostrar login y detener timeouts
-        showLoginScreen();
-        stopRealtimeUpdates();
-    }
+            });
+        }
 
-    setupLoginEvents();
+        setupLoginEvents();
         
         console.log('✅ Panel Admin inicializado');
         
