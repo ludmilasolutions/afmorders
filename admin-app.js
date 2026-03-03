@@ -754,7 +754,9 @@ async function clearAllOrders() {
         let deletedCount = 0;
         
         snapshot.docs.forEach(doc => {
-            batch.delete(doc.ref);
+            // Usar doc.id directamente para Supabase adapter
+            const docRef = db.collection('orders').doc(doc.id);
+            batch.delete(docRef);
             deletedCount++;
             
             if (deletedCount % 400 === 0) {
