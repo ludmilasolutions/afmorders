@@ -1075,7 +1075,7 @@ async function confirmOrderHandler() {
             tipo_pedido: deliveryTypeValue,
             direccion: deliveryTypeValue === 'envío' ? customerAddressValue : '',
             pedido_detallado: fullOrderText,
-            items: appState.cart.map(item ={> ({
+            items: appState.cart.map(item => ({
                 id: item.id,
                 nombre: item.name,
                 precio: item.price,
