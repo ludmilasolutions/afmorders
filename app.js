@@ -1248,7 +1248,13 @@ function updateStoreStatus() {
 
 function checkStoreIsOpen() {
     const settings = appState.settings;
-    if (!settings || !settings.horarios_por_dia) return false;
+    if (!settings) return false;
+    
+    // Primero verificar si está manualmente cerrado
+    if (settings.abierto === false) return false;
+    
+    // Si no hay horarios configurados, considerar abierto
+    if (!settings.horarios_por_dia) return true;
     
     const now = new Date();
     const dayNames = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
