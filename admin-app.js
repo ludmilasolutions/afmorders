@@ -21,7 +21,8 @@ const adminState = {
     lastOrderId: null,
     realtimeEnabled: true,
     productSearchTerm: '',
-    notifiedOrderIds: new Set() // IDs de pedidos ya notificados con sonido
+    notifiedOrderIds: new Set(), // IDs de pedidos ya notificados con sonido
+    initialLoadComplete: false // Flag para evitar notificaciones en carga inicial
 };
 // Init guard: ensure initialization runs once per page load
 let adminAppInitialized = false;
@@ -430,7 +431,8 @@ async function loadOrders() {
         const newOrders = orders.filter(o => !previousOrderIds.has(o.id));
         adminState.orders = orders;
 
-        if (newOrders.length > 0) {
+        // Solo notificar si NO es la carga inicial
+        if (newOrders.length > 0 && adminState.initialLoadComplete) {
             console.log(`🆕 ${newOrders.length} nuevos pedidos detectados`);
             const reallyNew = newOrders.filter(o => !adminState.notifiedOrderIds.has(o.id));
             if (reallyNew.length > 0) {
@@ -440,6 +442,8 @@ async function loadOrders() {
                 showNewOrderAlert(orderIdDisplay);
                 playNewOrderSound();
             }
+        } else if (newOrders.length > 0) {
+            console.log(`📦 ${newOrders.length} pedidos cargados (carga inicial - sin notificación)`);
         }
         console.log(`📦 ${adminState.orders.length} pedidos cargados (últimas 24hs)`);
         return adminState.orders;
@@ -2253,6 +2257,9 @@ async function loadAllData() {
         await loadOrders();
         await loadProducts();
         await loadCategories();
+        
+        // Marcar que la carga inicial completósolo notifica pedidos nuevos a partir de ahora
+        adminState.initialLoadComplete = true;
         
         // Inicializar el set de pedidos notificados con los existentes
         adminState.orders.forEach(order => adminState.notifiedOrderIds.add(order.id));
