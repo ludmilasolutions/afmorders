@@ -3675,8 +3675,16 @@
                 
                 const total = subtotal + deliveryCost;
                 
-                // Generar ID de pedido
-                const orderId = `TACHI-${Date.now().toString().slice(-6)}`;
+                // Generar ID de pedido usando el nombre del local
+                let prefix = 'PED';
+                const nombreLocal = appState.settings?.nombre_local || 'Mi Local';
+                prefix = nombreLocal
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9]/g, '')
+                    .substring(0, 4)
+                    .padEnd(4, 'X');
+                const orderId = `${prefix}-${Date.now().toString().slice(-6)}`;
+                console.log('🎫 ID de pedido generado:', orderId, 'desde:', nombreLocal);
                 
                 // Crear pedido en Supabase
                 const orderData = {
