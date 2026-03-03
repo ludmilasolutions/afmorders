@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -676,8 +677,8 @@
         .cart-button-floating {
             position: fixed;
             bottom: 2rem;
-            left: 2rem;
-            right: auto;
+            right: 2rem;        /* Fijo a la derecha */
+            left: auto;          /* Anula cualquier left */
             width: 70px;
             height: 70px;
             border-radius: 35px;
@@ -687,19 +688,12 @@
             font-size: 1.5rem;
             cursor: pointer;
             box-shadow: 0 12px 40px rgba(79, 70, 229, 0.5);
-            z-index: 1200;
+            z-index: 1300;        /* Más alto que overlays (1200, 1001, 1002) */
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             animation: float 3s ease-in-out infinite;
-            left: auto;
-            right: 2rem;
-        }
-        
-        .cart-button-floating,
-        .cart-button-header {
-            position: relative;
         }
         
         .cart-button-floating:hover {
@@ -2209,7 +2203,7 @@
         </div>
     </div>
 
-    <!-- BOTÓN FLOTANTE CARRITO -->
+    <!-- BOTÓN FLOTANTE CARRITO (CORREGIDO: SIEMPRE A LA DERECHA Y CON Z-INDEX ALTO) -->
     <button class="cart-button-floating" id="cartButtonFloating">
         <i class="fas fa-shopping-cart"></i>
         <span class="cart-count" id="cartCountFloating">0</span>
@@ -3152,8 +3146,7 @@
                 'milanesas': 'fas fa-drumstick-bite',
                 'ensaladas': 'fas fa-leaf'
             };
-            
-
+            return icons[categoryId] || 'fas fa-tag';
         }
         
         // Renderizar categorías
@@ -4303,4 +4296,3 @@
     </script>
 </body>
 </html>
-        
