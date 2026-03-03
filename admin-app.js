@@ -2774,10 +2774,13 @@ async function initAdminApp() {
                 stopRealtimeUpdates();
             }
         });
-        
-        });
-        }
-        setupLoginEvents();
+    } else {
+        // Firebase no disponible; fallback simple: mostrar login y detener timeouts
+        showLoginScreen();
+        stopRealtimeUpdates();
+    }
+
+    setupLoginEvents();
         
         console.log('✅ Panel Admin inicializado');
         
