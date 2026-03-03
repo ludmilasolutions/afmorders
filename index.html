@@ -692,6 +692,7 @@
             justify-content: center;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             animation: float 3s ease-in-out infinite;
+            position: relative;
         }
         
         .cart-button-floating:hover {
@@ -3508,9 +3509,21 @@
             const modal = elements.checkoutModal;
             modal.style.display = 'flex';
             
-            // Resetear formulario
-            document.getElementById('customerName').value = '';
-            document.getElementById('customerPhone').value = '';
+            // Cargar datos guardados del usuario o usar los del perfil
+            const savedUserData = localStorage.getItem('eltachi_user_data');
+            let userData = savedUserData ? JSON.parse(savedUserData) : {};
+            
+            // Si hay usuario loggeado, usar sus datos
+            if (appState.currentUser) {
+                userData = {
+                    name: userData.name || appState.currentUser.displayName || '',
+                    phone: userData.phone || ''
+                };
+            }
+            
+            // Resetear formulario pero con datos guardados
+            document.getElementById('customerName').value = userData.name || '';
+            document.getElementById('customerPhone').value = userData.phone || '';
             document.getElementById('customerAddress').value = '';
             document.getElementById('orderComments').value = '';
             document.getElementById('deliveryPickup').checked = true;
@@ -3710,6 +3723,13 @@
                 }
                 
                 await db.collection('orders').doc(orderId).set(orderData);
+                
+                // Guardar datos del usuario para próxima compra
+                const userData = {
+                    name: customerName,
+                    phone: customerPhone
+                };
+                localStorage.setItem('eltachi_user_data', JSON.stringify(userData));
                 
                 // Actualizar pantalla final
                 document.getElementById('orderIdDisplay').textContent = orderId;
