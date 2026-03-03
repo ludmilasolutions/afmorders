@@ -2713,11 +2713,33 @@ async function initAdminApp() {
         // Solicitar permiso de notificaciones
         requestNotificationPermission();
         
-        // Verificar conexión a Supabase
+        // Verificar conexión a Supabase y esperar a que esté lista
+        let attempts = 0;
+        while (!window.supabase && attempts < 50) {
+            await new Promise(r => setTimeout(r, 100));
+            attempts++;
+        }
+        
         if (!window.supabase) {
             showNotification('Error: Supabase no está inicializado', 'error');
+            console.error('❌ Supabase no disponible después de 5 segundos');
             return;
         }
+        
+        // Verificar que el adaptador esté configurado (db y auth)
+        attempts = 0;
+        while ((!window.db || !window.auth) && attempts < 50) {
+            await new Promise(r => setTimeout(r, 100));
+            attempts++;
+        }
+        
+        if (!window.db || !window.auth) {
+            showNotification('Error: Adaptador de base de datos no configurado', 'error');
+            console.error('❌ Adaptador DB no disponible después de 5 segundos');
+            return;
+        }
+        
+        console.log('✅ Supabase y adaptador configurados');
         
         // Configurar auth con Supabase (fallback si Firebase no está)
         if (!(window.auth && typeof window.auth.onAuthStateChanged === 'function')) {
@@ -2868,7 +2890,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // INICIALIZAR LA APLICACIÓN (llamado desde admin.html)
-document.addEventListener('DOMContentLoaded', initAdminApp);
+// Nota: initAdminApp ya se llama desde admin.html después de initSupabase()
+// Eliminado event listener duplicado para evitar doble inicialización
 window.addEventListener('beforeunload', stopRealtimeUpdates);
 
 // EXPORTAR FUNCIONES GLOBALES
