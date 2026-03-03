@@ -1153,13 +1153,34 @@ async function generateOrderId() {
             }
             
             const paddedNumber = newNumber.toString().padStart(6, '0');
-            return `TACHI-${paddedNumber}`;
+            
+            // Obtener prefijo del nombre del local (primeras letras, sin espacios)
+            let prefix = 'PED';
+            if (appState.settings && appState.settings.nombre_local) {
+                prefix = appState.settings.nombre_local
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9]/g, '')
+                    .substring(0, 4)
+                    .padEnd(4, 'X');
+            }
+            
+            return `${prefix}-${paddedNumber}`;
         });
         
     } catch (error) {
         console.error('Error generando ID:', error);
         const timestamp = Date.now().toString().slice(-6);
-        return `TACHI-${timestamp}`;
+        
+        let prefix = 'PED';
+        if (appState.settings && appState.settings.nombre_local) {
+            prefix = appState.settings.nombre_local
+                .toUpperCase()
+                .replace(/[^A-Z0-9]/g, '')
+                .substring(0, 4)
+                .padEnd(4, 'X');
+        }
+        
+        return `${prefix}-${timestamp}`;
     }
 }
 
