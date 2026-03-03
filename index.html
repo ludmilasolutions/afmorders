@@ -248,7 +248,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 3px solid var(--blanco);
+            border: 3px solid var(--fondo-principal);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             animation: pulse 1.5s infinite;
         }
@@ -686,12 +686,18 @@
             font-size: 1.5rem;
             cursor: pointer;
             box-shadow: 0 12px 40px rgba(79, 70, 229, 0.5);
-            z-index: 999;
+            z-index: 1200;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             animation: float 3s ease-in-out infinite;
+            left: auto;
+            right: 2rem;
+        }
+        
+        .cart-button-floating,
+        .cart-button-header {
             position: relative;
         }
         
@@ -985,7 +991,7 @@
         }
         
         .checkout-content {
-            background: var(--blanco);
+            background: #1e293b;
             border-radius: 28px;
             width: 100%;
             max-width: 500px;
@@ -1151,7 +1157,7 @@
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 700;
-            color: var(--gris-oscuro);
+            color: var(--texto-primary);
             font-size: 0.95rem;
             display: flex;
             align-items: center;
@@ -1170,7 +1176,8 @@
             font-family: 'Inter', sans-serif;
             font-size: 1rem;
             transition: all 0.3s ease;
-            background: var(--blanco);
+            background: var(--fondo-card);
+            color: var(--texto-primary);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
         
@@ -1213,7 +1220,8 @@
             flex-direction: column;
             align-items: center;
             gap: 0.75rem;
-            background: var(--blanco);
+            background: var(--fondo-card);
+            color: var(--texto-primary);
         }
         
         .radio-label i {
