@@ -23,6 +23,8 @@ const adminState = {
     productSearchTerm: '',
     notifiedOrderIds: new Set() // IDs de pedidos ya notificados con sonido
 };
+// Init guard: ensure initialization runs once per page load
+let adminAppInitialized = false;
 
 // FUNCIONES DE UTILIDAD (definidas primero)
 function showNotification(message, type = 'info') {
@@ -2715,6 +2717,11 @@ function showLoginScreen() {
 
 // INICIALIZACIÓN PRINCIPAL
 async function initAdminApp() {
+    if (adminAppInitialized) {
+        console.log('⚠️ Admin already initialized; skipping duplicate initialization.');
+        return;
+    }
+    adminAppInitialized = true;
     try {
         console.log('🚀 Inicializando Panel Admin...');
         
@@ -2844,6 +2851,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // INICIALIZAR LA APLICACIÓN (llamado desde admin.html)
 document.addEventListener('DOMContentLoaded', initAdminApp);
+window.addEventListener('beforeunload', stopRealtimeUpdates);
 
 // EXPORTAR FUNCIONES GLOBALES
 window.updateOrderStatus = updateOrderStatus;
