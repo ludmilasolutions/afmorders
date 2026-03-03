@@ -1144,9 +1144,14 @@ async function generateOrderId() {
         const settingsRef = db.collection('settings').doc('config');
         const settingsDoc = await settingsRef.get();
         
+        console.log('📄 settingsDoc:', settingsDoc);
+        console.log('📄 settingsDoc.exists:', settingsDoc.exists);
+        
         let nombreLocal = 'Mi Local';
         if (settingsDoc.exists) {
             const settingsData = settingsDoc.data();
+            console.log('📋 settingsData completo:', settingsData);
+            console.log('📋 nombre_local en settingsData:', settingsData?.nombre_local);
             nombreLocal = settingsData?.nombre_local || 'Mi Local';
             console.log('🏪 Nombre del local desde Supabase:', nombreLocal);
             // Actualizar appState con los settings más recientes
@@ -1154,6 +1159,8 @@ async function generateOrderId() {
         } else {
             console.log('⚠️ No se encontró configuración en Supabase');
         }
+        
+        console.log('🎯 Nombre local a usar para prefix:', nombreLocal);
         
         const counterRef = db.collection('counters').doc('orders');
         

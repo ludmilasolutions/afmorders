@@ -2179,6 +2179,7 @@ async function saveSettings() {
     
     try {
         // Usar set con merge para asegurar que se guarden todos los campos
+        console.log('💾 Guardando configuración con datos:', JSON.stringify(settingsData, null, 2));
         await db.collection('settings').doc('config').set(settingsData, { merge: true });
         
         adminState.settings = { ...adminState.settings, ...settingsData };
