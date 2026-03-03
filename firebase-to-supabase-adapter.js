@@ -30,22 +30,22 @@ class FirestoreAdapter {
     }
     
     batch() {
+        const ops = [];
         return {
-            _ops: [],
             set: (docRef, data) => {
-                this._ops.push({ type: 'upsert', docRef, data });
+                ops.push({ type: 'upsert', docRef, data });
                 return this;
             },
             update: (docRef, data) => {
-                this._ops.push({ type: 'update', docRef, data });
+                ops.push({ type: 'update', docRef, data });
                 return this;
             },
             delete: (docRef) => {
-                this._ops.push({ type: 'delete', docRef });
+                ops.push({ type: 'delete', docRef });
                 return this;
             },
             commit: async () => {
-                for (const op of this._ops) {
+                for (const op of ops) {
                     if (op.type === 'upsert') {
                         await op.docRef.set(op.data);
                     } else if (op.type === 'update') {
@@ -54,7 +54,6 @@ class FirestoreAdapter {
                         await op.docRef.delete();
                     }
                 }
-                this._ops = [];
             }
         };
     }
