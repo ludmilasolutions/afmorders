@@ -598,16 +598,16 @@
         
         .filter-label {
             font-weight: 600;
-            color: #4b5563;
+            color: var(--texto-primary);
             white-space: nowrap;
         }
         
         .filter-select {
             padding: 10px 15px;
-            border: 2px solid #e5e7eb;
+            border: 2px solid var(--gris-border);
             border-radius: 8px;
-            background: white;
-            color: #1f2937;
+            background: var(--fondo-card);
+            color: var(--texto-primary);
             font-weight: 500;
             cursor: pointer;
             min-width: 180px;
@@ -792,10 +792,12 @@
         .time-input {
             width: 50px;
             padding: 6px;
-            border: 1px solid #e5e7eb;
+            border: 1px solid var(--gris-border);
             border-radius: 6px;
             text-align: center;
             font-size: 0.9rem;
+            background: var(--fondo-card);
+            color: var(--texto-primary);
         }
         
         .time-input:focus {
@@ -1013,7 +1015,7 @@
         
         .chart-no-data i {
             font-size: 2.5rem;
-            color: #cbd5e1;
+            color: var(--texto-secondary);
             margin-bottom: 10px;
         }
         
@@ -1051,7 +1053,7 @@
         }
         
         .custom-tooltip .tooltip-body {
-            color: #cbd5e1;
+            color: var(--texto-secondary);
             font-size: 1rem;
             font-weight: 600;
         }
@@ -1480,7 +1482,7 @@
                             <i class="fas fa-exclamation-triangle"></i>
                             <p>Error cargando el gráfico</p>
                         </div>
-                        <div id="ordersChartNoData" class="chart-error" style="display: none; color: #6b7280;">
+                        <div id="ordersChartNoData" class="chart-error" style="display: none; color: var(--texto-secondary);">
                             <i class="fas fa-chart-line"></i>
                             <p>No hay pedidos hoy</p>
                         </div>
@@ -1832,7 +1834,7 @@
                         <div id="salesChartNoData" class="chart-no-data">
                             <i class="fas fa-chart-bar"></i>
                             <p>No hay datos para mostrar</p>
-                            <p style="font-size: 0.9rem; color: #9ca3af; margin-top: 5px;">
+                            <p style="font-size: 0.9rem; color: var(--texto-secondary); margin-top: 5px;">
                                 Genera un reporte para ver las ventas
                             </p>
                         </div>
